@@ -9,6 +9,576 @@ from functools import wraps
 import logging
 import calendar
 
+# ========== 多语言支持 ==========
+
+# 支持的语言列表
+LANGUAGES = {
+    "zh": "中文",
+    "pt": "Português"
+}
+
+# 翻译字典（所有界面文本）
+TRANSLATIONS = {
+    # ---------- 通用 ----------
+    "app_title": {
+        "zh": "仓库出勤统计",
+        "pt": "Estatística de Frequência do Armazém"
+    },
+    "login_title": {
+        "zh": "🔐 登录",
+        "pt": "🔐 Login"
+    },
+    "username": {
+        "zh": "用户名",
+        "pt": "Usuário"
+    },
+    "password": {
+        "zh": "密码",
+        "pt": "Senha"
+    },
+    "login_button": {
+        "zh": "登录",
+        "pt": "Entrar"
+    },
+    "login_error": {
+        "zh": "❌ 用户名或密码错误",
+        "pt": "❌ Usuário ou senha incorretos"
+    },
+    "logout": {
+        "zh": "登出",
+        "pt": "Sair"
+    },
+    "user_role_admin": {
+        "zh": "管理员",
+        "pt": "Administrador"
+    },
+    "user_role_user": {
+        "zh": "普通用户",
+        "pt": "Usuário comum"
+    },
+    "language_selector": {
+        "zh": "🌐 语言 / Idioma",
+        "pt": "🌐 Idioma / 语言"
+    },
+
+    # ---------- Tab 名称 ----------
+    "tab_upload_attendance": {
+        "zh": "📤 上传出勤数据",
+        "pt": "📤 Carregar Frequência"
+    },
+    "tab_overview": {
+        "zh": "📊 数据总览",
+        "pt": "📊 Visão Geral"
+    },
+    "tab_efficiency": {
+        "zh": "📈 外劳人效分析看板",
+        "pt": "📈 Painel de Eficiência"
+    },
+    "tab_upload_ops": {
+        "zh": "📊 上传操作量",
+        "pt": "📊 Carregar Volume"
+    },
+    "tab_price_card": {
+        "zh": "💰 价卡配置",
+        "pt": "💰 Tabela de Preços"
+    },
+
+    # ---------- 上传出勤数据 Tab ----------
+    "attendance_title": {
+        "zh": "📤 上传出勤数据",
+        "pt": "📤 Carregar Frequência"
+    },
+    "attendance_instructions": {
+        "zh": """
+        ### 操作说明
+        1. 选择 **日期范围** 和 **一个或多个仓库**。
+        2. 点击 **"生成表格"**，系统会生成一个可编辑表格：
+           - 前两列为 **仓库** 和 **日期**。
+           - 其余列为 **供应商 → 班次 → 人员类型** 的三级表头。
+        3. 在对应格子中填写出勤人数。
+        4. 填写完毕后，点击 **"提交数据"**。
+        """,
+        "pt": """
+        ### Instruções
+        1. Selecione o **intervalo de datas** e **um ou mais armazéns**.
+        2. Clique em **"Gerar Tabela"** para criar uma tabela editável:
+           - As duas primeiras colunas são **Armazém** e **Data**.
+           - As demais colunas têm cabeçalho de três níveis: **Fornecedor → Turno → Tipo de Mão de Obra**.
+        3. Preencha o número de funcionários nas células correspondentes.
+        4. Após preencher, clique em **"Enviar Dados"**.
+        """
+    },
+    "attendance_start_date": {
+        "zh": "📅 开始日期",
+        "pt": "📅 Data Inicial"
+    },
+    "attendance_end_date": {
+        "zh": "📅 结束日期",
+        "pt": "📅 Data Final"
+    },
+    "attendance_select_warehouses": {
+        "zh": "🏭 选择仓库（可多选）",
+        "pt": "🏭 Selecionar Armazéns (múltiplos)"
+    },
+    "attendance_generate_btn": {
+        "zh": "📋 生成表格",
+        "pt": "📋 Gerar Tabela"
+    },
+    "attendance_no_warehouse_warning": {
+        "zh": "⚠️ 请至少选择一个仓库",
+        "pt": "⚠️ Selecione pelo menos um armazém"
+    },
+    "attendance_invalid_date_warning": {
+        "zh": "⚠️ 日期范围无效",
+        "pt": "⚠️ Intervalo de datas inválido"
+    },
+    "attendance_no_price_config": {
+        "zh": "⚠️ 所选仓库在价卡表中无配置，请先上传价卡",
+        "pt": "⚠️ Armazém selecionado não possui configuração na tabela de preços. Carregue a tabela primeiro."
+    },
+    "attendance_table_subheader": {
+        "zh": "📋 出勤数据表格 ({rows} 行 × {cols} 列)",
+        "pt": "📋 Tabela de Frequência ({rows} linhas × {cols} colunas)"
+    },
+    "attendance_submit_btn": {
+        "zh": "📤 提交数据",
+        "pt": "📤 Enviar Dados"
+    },
+    "attendance_clear_btn": {
+        "zh": "🗑️ 清空表格",
+        "pt": "🗑️ Limpar Tabela"
+    },
+    "attendance_no_data_warning": {
+        "zh": "⚠️ 所有数值均为0，没有需要提交的数据",
+        "pt": "⚠️ Todos os valores são 0, não há dados a enviar"
+    },
+    "attendance_no_records_warning": {
+        "zh": "⚠️ 没有找到有效数据（大于0）",
+        "pt": "⚠️ Nenhum dado válido encontrado (maior que 0)"
+    },
+    "attendance_success": {
+        "zh": "✅ 全部 {count} 条数据上传成功！版本号：{version}",
+        "pt": "✅ {count} registros enviados com sucesso! Versão: {version}"
+    },
+    "attendance_error": {
+        "zh": "❌ 上传失败 {count} 条，请检查数据后重试",
+        "pt": "❌ Falha ao enviar {count} registros. Verifique os dados e tente novamente."
+    },
+    "attendance_upload_error": {
+        "zh": "❌ 上传出错：{error}",
+        "pt": "❌ Erro ao enviar: {error}"
+    },
+    "attendance_download_template_caption": {
+        "zh": "💡 下载 Excel 模板，表头为三层（供应商 → 班次 → 人员类型），无序号列，填写后复制粘贴到线上表格。",
+        "pt": "💡 Baixe o modelo Excel com cabeçalho de três níveis (Fornecedor → Turno → Tipo). Preencha e copie para a tabela online."
+    },
+    "attendance_download_btn": {
+        "zh": "📥 下载模板 (Excel)",
+        "pt": "📥 Baixar Modelo (Excel)"
+    },
+    "attendance_info_generate": {
+        "zh": "👆 请选择日期范围、仓库，并点击“生成表格”",
+        "pt": "👆 Selecione o intervalo de datas e armazéns, e clique em “Gerar Tabela”"
+    },
+
+    # ---------- 数据总览 Tab ----------
+    "overview_title": {
+        "zh": "📊 数据总览",
+        "pt": "📊 Visão Geral dos Dados"
+    },
+    "overview_caption": {
+        "zh": "仅展示每个仓库每月最新版本的数据，可通过筛选查看特定时间和站点",
+        "pt": "Exibe apenas os dados da versão mais recente de cada armazém por mês. Filtre por período e estação."
+    },
+    "overview_month": {
+        "zh": "📅 选择年月",
+        "pt": "📅 Selecionar Mês/Ano"
+    },
+    "overview_site": {
+        "zh": "🏢 选择站点",
+        "pt": "🏢 Selecionar Estação"
+    },
+    "overview_warehouses": {
+        "zh": "🏢 仓库数",
+        "pt": "🏢 Armazéns"
+    },
+    "overview_total_people": {
+        "zh": "👷 总外劳人数",
+        "pt": "👷 Total de Funcionários"
+    },
+    "overview_total_records": {
+        "zh": "📋 总记录数",
+        "pt": "📋 Total de Registros"
+    },
+    "overview_uploaders": {
+        "zh": "👤 上传人数",
+        "pt": "👤 Uploaders"
+    },
+    "overview_warehouse_summary": {
+        "zh": "🏢 各仓库汇总",
+        "pt": "🏢 Resumo por Armazém"
+    },
+    "overview_export": {
+        "zh": "📥 导出数据",
+        "pt": "📥 Exportar Dados"
+    },
+    "overview_export_csv": {
+        "zh": "📥 导出当前数据 (CSV)",
+        "pt": "📥 Exportar dados atuais (CSV)"
+    },
+    "overview_no_data": {
+        "zh": "📭 暂无数据，请先上传",
+        "pt": "📭 Sem dados, faça o upload primeiro"
+    },
+
+    # ---------- 外劳人效分析看板 ----------
+    "efficiency_title": {
+        "zh": "📈 外劳人效分析看板",
+        "pt": "📈 Painel de Eficiência de Mão de Obra"
+    },
+    "efficiency_caption": {
+        "zh": "核心指标：人效、日均操作量、日均出勤人数、总出勤人天、单人天成本",
+        "pt": "Indicadores principais: Eficiência, Volume Médio Diário, Frequência Média Diária, Total de Dias-pessoa, Custo por Pessoa-dia"
+    },
+    "efficiency_filters": {
+        "zh": "🔍 筛选条件",
+        "pt": "🔍 Filtros"
+    },
+    "efficiency_month": {
+        "zh": "年月",
+        "pt": "Mês/Ano"
+    },
+    "efficiency_region": {
+        "zh": "国家/区域",
+        "pt": "País/Região"
+    },
+    "efficiency_site": {
+        "zh": "站点",
+        "pt": "Estação"
+    },
+    "efficiency_no_data": {
+        "zh": "📭 当前无数据，请先上传出勤数据和操作量数据",
+        "pt": "📭 Sem dados. Carregue os dados de frequência e volume primeiro."
+    },
+    "efficiency_read_error": {
+        "zh": "❌ 读取数据失败：{error}",
+        "pt": "❌ Falha ao ler dados: {error}"
+    },
+    "efficiency_filter_no_data": {
+        "zh": "该筛选条件下无数据",
+        "pt": "Nenhum dado para este filtro"
+    },
+    "efficiency_core_metrics": {
+        "zh": "📊 核心指标",
+        "pt": "📊 Indicadores Principais"
+    },
+    "efficiency_metric_efficiency": {
+        "zh": "人效",
+        "pt": "Eficiência"
+    },
+    "efficiency_metric_daily_volume": {
+        "zh": "日均操作量",
+        "pt": "Volume Médio Diário"
+    },
+    "efficiency_metric_daily_headcount": {
+        "zh": "日均出勤人数",
+        "pt": "Frequência Média Diária"
+    },
+    "efficiency_metric_total_person_days": {
+        "zh": "总出勤人天",
+        "pt": "Total de Dias-pessoa"
+    },
+    "efficiency_metric_unit_cost": {
+        "zh": "单人天成本",
+        "pt": "Custo por Pessoa-dia"
+    },
+    "efficiency_metric_unit": {
+        "zh": "📌 人效单位：票/人/天 | 日均操作量单位：票 | 日均出勤人数单位：人 | 总出勤人天单位：人天 | 单人天成本单位：R$",
+        "pt": "📌 Unidades: Eficiência: tickets/pessoa/dia | Volume médio: tickets | Frequência média: pessoas | Dias-pessoa: pessoa-dia | Custo: R$"
+    },
+    "efficiency_station_summary": {
+        "zh": "📋 各站点汇总",
+        "pt": "📋 Resumo por Estação"
+    },
+    "efficiency_export": {
+        "zh": "📥 导出数据",
+        "pt": "📥 Exportar Dados"
+    },
+    "efficiency_export_csv": {
+        "zh": "📥 导出当前汇总 (CSV)",
+        "pt": "📥 Exportar resumo atual (CSV)"
+    },
+
+    # ---------- 上传操作量 Tab ----------
+    "ops_title": {
+        "zh": "📊 操作量数据上传",
+        "pt": "📊 Carregar Volume de Operações"
+    },
+    "ops_instructions": {
+        "zh": """
+        ---
+        ### 📋 使用说明
+        1. 点击下方 **"下载模板"** 按钮，下载 Excel 模板
+        2. 按模板格式填写数据（**列名必须与模板完全一致**）
+        3. 填写完成后，点击 **"选择文件"** 上传
+        4. 系统将自动记录上传人和上传时间
+        5. **同一站点+日期+班次的数据不可重复上传**
+        """,
+        "pt": """
+        ---
+        ### 📋 Instruções
+        1. Clique no botão **"Baixar Modelo"** abaixo para baixar o modelo Excel.
+        2. Preencha os dados conforme o modelo (**os nomes das colunas devem corresponder exatamente**).
+        3. Após preencher, clique em **"Selecionar arquivo"** para fazer o upload.
+        4. O sistema registrará automaticamente o uploader e a data/hora.
+        5. **Dados duplicados para o mesmo armazém+data+turno não são permitidos.**
+        """
+    },
+    "ops_download_template_btn": {
+        "zh": "📥 下载操作量模板 (Excel)",
+        "pt": "📥 Baixar Modelo de Volume (Excel)"
+    },
+    "ops_upload_file": {
+        "zh": "📂 上传操作量文件",
+        "pt": "📂 Carregar arquivo de volume"
+    },
+    "ops_choose_file": {
+        "zh": "选择 Excel 或 CSV 文件",
+        "pt": "Selecione arquivo Excel ou CSV"
+    },
+    "ops_invalid_columns": {
+        "zh": "❌ 列名与模板不一致！",
+        "pt": "❌ Os nomes das colunas não correspondem ao modelo!"
+    },
+    "ops_validation_passed": {
+        "zh": "✅ 校验通过！共 {count} 行数据待上传",
+        "pt": "✅ Validação aprovada! {count} linhas prontas para upload"
+    },
+    "ops_submit_btn": {
+        "zh": "✅ 确认上传操作量",
+        "pt": "✅ Confirmar upload de volume"
+    },
+    "ops_upload_success": {
+        "zh": "✅ 操作量数据上传成功！共 {count} 条",
+        "pt": "✅ Dados de volume enviados com sucesso! {count} registros"
+    },
+    "ops_upload_error": {
+        "zh": "❌ 上传失败，请检查数据后重试",
+        "pt": "❌ Falha no upload. Verifique os dados e tente novamente."
+    },
+    "ops_overview_title": {
+        "zh": "📊 操作量数据总览",
+        "pt": "📊 Visão Geral do Volume"
+    },
+    "ops_overview_caption": {
+        "zh": "展示已上传的操作量数据，可按年月和站点筛选",
+        "pt": "Exibe dados de volume já enviados. Filtre por mês/ano e estação."
+    },
+    "ops_no_data": {
+        "zh": "📭 暂无操作量数据，请先上传",
+        "pt": "📭 Sem dados de volume. Faça o upload primeiro."
+    },
+    "ops_month": {
+        "zh": "📅 选择年月",
+        "pt": "📅 Selecionar Mês/Ano"
+    },
+    "ops_site": {
+        "zh": "🏢 选择站点",
+        "pt": "🏢 Selecionar Estação"
+    },
+    "ops_total_records": {
+        "zh": "📋 总记录数",
+        "pt": "📋 Total de Registros"
+    },
+    "ops_total_volume": {
+        "zh": "📦 总操作量",
+        "pt": "📦 Volume Total"
+    },
+    "ops_warehouses": {
+        "zh": "🏢 站点数",
+        "pt": "🏢 Número de Estações"
+    },
+    "ops_days": {
+        "zh": "📅 天数",
+        "pt": "📅 Dias"
+    },
+    "ops_station_summary": {
+        "zh": "🏢 各站点操作量汇总",
+        "pt": "🏢 Resumo por Estação"
+    },
+    "ops_export": {
+        "zh": "📥 导出操作量数据",
+        "pt": "📥 Exportar dados de volume"
+    },
+    "ops_export_csv": {
+        "zh": "📥 导出操作量数据 (CSV)",
+        "pt": "📥 Exportar dados de volume (CSV)"
+    },
+
+    # ---------- 价卡配置 Tab ----------
+    "price_title": {
+        "zh": "💰 价卡配置",
+        "pt": "💰 Tabela de Preços"
+    },
+    "price_admin_only": {
+        "zh": "仅管理员（Ivy_Gao）可管理价卡配置",
+        "pt": "Apenas o administrador (Ivy_Gao) pode gerenciar a tabela de preços"
+    },
+    "price_current_list": {
+        "zh": "📋 当前价卡列表",
+        "pt": "📋 Lista de Preços Atual"
+    },
+    "price_no_config": {
+        "zh": "暂无价卡配置，请联系管理员上传",
+        "pt": "Nenhuma tabela de preços configurada. Entre em contato com o administrador."
+    },
+    "price_admin_mode": {
+        "zh": "管理员模式：可下载模板、上传价卡（版本控制，全量导入）",
+        "pt": "Modo administrador: Baixe o modelo, carregue a tabela de preços (controle de versão, importação completa)"
+    },
+    "price_current_version": {
+        "zh": "📌 当前生效版本：**{version}**",
+        "pt": "📌 Versão atual: **{version}**"
+    },
+    "price_no_version": {
+        "zh": "📌 暂无价卡配置，请上传",
+        "pt": "📌 Nenhuma tabela de preços. Faça o upload."
+    },
+    "price_download_template": {
+        "zh": "📋 下载价卡模板",
+        "pt": "📋 Baixar Modelo de Preços"
+    },
+    "price_download_btn": {
+        "zh": "📥 下载价卡模板 (Excel)",
+        "pt": "📥 Baixar Modelo (Excel)"
+    },
+    "price_upload_instruction": {
+        "zh": "📤 上传价卡配置（全量导入）",
+        "pt": "📤 Carregar Tabela de Preços (importação completa)"
+    },
+    "price_upload_caption": {
+        "zh": "每次上传将作为一个新版本，系统将自动以最新版本为准。相同版本号再次上传会覆盖旧版本。",
+        "pt": "Cada upload cria uma nova versão. O sistema usará automaticamente a versão mais recente. Mesmo número de versão substituirá a versão antiga."
+    },
+    "price_version_label": {
+        "zh": "版本号",
+        "pt": "Número da Versão"
+    },
+    "price_choose_file": {
+        "zh": "选择 Excel 或 CSV",
+        "pt": "Selecionar Excel ou CSV"
+    },
+    "price_submit_btn": {
+        "zh": "确认上传",
+        "pt": "Confirmar Upload"
+    },
+    "price_missing_version": {
+        "zh": "❌ 请填写版本号",
+        "pt": "❌ Preencha o número da versão"
+    },
+    "price_missing_file": {
+        "zh": "❌ 请选择文件",
+        "pt": "❌ Selecione um arquivo"
+    },
+    "price_invalid_columns": {
+        "zh": "❌ 列名与模板不一致！",
+        "pt": "❌ Os nomes das colunas não correspondem ao modelo!"
+    },
+    "price_date_error": {
+        "zh": "❌ 日期格式有误：{error}",
+        "pt": "❌ Formato de data inválido: {error}"
+    },
+    "price_price_error": {
+        "zh": "❌ 单价必须为数字：{error}",
+        "pt": "❌ O preço unitário deve ser um número: {error}"
+    },
+    "price_version_exists": {
+        "zh": "⚠️ 版本 '{version}' 已存在，已覆盖旧数据",
+        "pt": "⚠️ Versão '{version}' já existe. Substituindo dados antigos."
+    },
+    "price_upload_success": {
+        "zh": "✅ 价卡配置上传成功！版本：{version}，共 {count} 条",
+        "pt": "✅ Tabela de preços enviada com sucesso! Versão: {version}, {count} registros"
+    },
+    "price_upload_error": {
+        "zh": "❌ 上传失败，请重试",
+        "pt": "❌ Falha no upload. Tente novamente."
+    },
+    "price_read_error": {
+        "zh": "❌ 读取文件失败：{error}",
+        "pt": "❌ Falha ao ler o arquivo: {error}"
+    },
+    "price_current_version_detail": {
+        "zh": "✅ 当前版本：**{version}** | 上传人：{uploader}",
+        "pt": "✅ Versão atual: **{version}** | Uploader: {uploader}"
+    },
+    "price_export_current": {
+        "zh": "📥 导出当前版本价卡",
+        "pt": "📥 Exportar tabela de preços atual"
+    },
+    "price_export_btn": {
+        "zh": "📥 导出价卡 ({version})",
+        "pt": "📥 Exportar Preços ({version})"
+    },
+    "price_history_expander": {
+        "zh": "📜 查看所有历史版本",
+        "pt": "📜 Ver todas as versões anteriores"
+    },
+    "price_history_version": {
+        "zh": "版本号",
+        "pt": "Versão"
+    },
+    "price_history_upload_time": {
+        "zh": "上传时间",
+        "pt": "Data/Hora do Upload"
+    },
+    "price_history_records": {
+        "zh": "记录数",
+        "pt": "Registros"
+    },
+    "price_select_version": {
+        "zh": "选择版本查看详情",
+        "pt": "Selecione a versão para ver detalhes"
+    },
+    "price_export_version_btn": {
+        "zh": "📥 导出 {version}",
+        "pt": "📥 Exportar {version}"
+    },
+
+    # ---------- 错误与状态消息（补充） ----------
+    "error_general": {
+        "zh": "❌ 错误：{msg}",
+        "pt": "❌ Erro: {msg}"
+    },
+    "warning_general": {
+        "zh": "⚠️ 警告：{msg}",
+        "pt": "⚠️ Aviso: {msg}"
+    },
+    "info_general": {
+        "zh": "ℹ️ {msg}",
+        "pt": "ℹ️ {msg}"
+    },
+    "success_general": {
+        "zh": "✅ {msg}",
+        "pt": "✅ {msg}"
+    }
+}
+
+def _t(key, **kwargs):
+    """获取当前语言的翻译文本，支持格式化参数"""
+    lang = st.session_state.get("language", "zh")
+    text = TRANSLATIONS.get(key, {}).get(lang, key)
+    if kwargs:
+        try:
+            return text.format(**kwargs)
+        except KeyError:
+            return text
+    return text
+
+# 初始化语言状态
+if "language" not in st.session_state:
+    st.session_state.language = "zh"
+
 # ========== 页面配置 ==========
 st.set_page_config(page_title="仓库出勤统计", layout="wide")
 
@@ -647,6 +1217,63 @@ with tab_dict["📤 上传出勤数据"]:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
+
+# ===================== Tab 数据总览 =====================
+with tab_dict["📊 数据总览"]:
+    st.title("📊 数据总览")
+    st.caption("仅展示每个仓库每月最新版本的数据，可通过筛选查看特定时间和站点")
+    
+    df_raw = get_latest_attendance(user if not is_admin else None)
+    if len(df_raw) == 0:
+        st.info("📭 暂无数据，请先上传")
+    else:
+        df_raw["年月"] = pd.to_datetime(df_raw["日期"]).dt.strftime("%Y-%m")
+        available_months = sorted(df_raw["年月"].unique(), reverse=True)
+        available_sites = sorted(df_raw["仓库名称"].unique())
+        
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            selected_month = st.selectbox("📅 选择年月", ["全部"] + available_months, key="overview_month")
+        with col_f2:
+            selected_site = st.selectbox("🏢 选择站点", ["全部"] + available_sites, key="overview_site")
+        
+        df_filtered = df_raw.copy()
+        if selected_month != "全部":
+            df_filtered = df_filtered[df_filtered["年月"] == selected_month]
+        if selected_site != "全部":
+            df_filtered = df_filtered[df_filtered["仓库名称"] == selected_site]
+        
+        total_records = len(df_filtered)
+        total_people = int(df_filtered["人数"].sum()) if total_records > 0 else 0
+        total_warehouses = df_filtered["仓库名称"].nunique()
+        total_uploaders = df_filtered["上传人"].nunique()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("🏢 仓库数", total_warehouses)
+        col2.metric("👷 总外劳人数", total_people)
+        col3.metric("📋 总记录数", total_records)
+        col4.metric("👤 上传人数", total_uploaders)
+        
+        st.divider()
+        st.dataframe(df_filtered, use_container_width=True)
+        
+        st.subheader("🏢 各仓库汇总")
+        warehouse_summary = df_filtered.groupby("仓库名称").agg({
+            "人数": "sum",
+            "区域": "first"
+        }).reset_index()
+        warehouse_summary.columns = ["仓库名称", "总人数", "区域"]
+        st.dataframe(warehouse_summary, use_container_width=True)
+        
+        st.subheader("📥 导出数据")
+        csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
+        st.download_button(
+            label="📥 导出当前数据 (CSV)",
+            data=csv,
+            file_name=f"仓库出勤汇总_{datetime.now().strftime('%Y%m%d')}.csv",
+            mime="text/csv"
+        )
+
 # ===================== Tab 外劳人效分析看板 =====================
 with tab_dict["📈 外劳人效分析看板"]:
     st.title("📈 外劳人效分析看板")
