@@ -52,11 +52,11 @@ TRANSLATIONS = {
     "col_unit_cost": {"zh": "单人天成本", "pt": "Custo por Pessoa-dia"},
     "col_days": {"zh": "天数", "pt": "Dias"},
 
-    # ---------- 人员类型值翻译 ----------
+    # ---------- 人员类型值 ----------
     "worker_long": {"zh": "长期工", "pt": "Contrato"},
     "worker_daily": {"zh": "日结工", "pt": "Diária"},
 
-    # ---------- Tab 标题 ----------
+    # ---------- Tab 标签 ----------
     "tab_upload_attendance": {"zh": "📤 上传出勤数据", "pt": "📤 Carregar Frequência"},
     "tab_overview": {"zh": "📊 数据总览", "pt": "📊 Visão Geral"},
     "tab_efficiency": {"zh": "📈 外劳人效分析看板", "pt": "📈 Painel de Eficiência"},
@@ -544,8 +544,7 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.rerun()
 
-# ========== 主界面 ==========
-# ========== 主界面 ==========
+# ========== 主界面（自定义 Tab，支持翻译且不重置） ==========
 
 # 获取当前语言的 Tab 标签列表
 tab_labels = [_t("tab_upload_attendance"), _t("tab_overview"), _t("tab_efficiency"), _t("tab_upload_ops"), _t("tab_price_card")]
@@ -569,45 +568,8 @@ st.divider()
 # 根据选中的索引显示对应的 Tab 内容
 active_tab = st.session_state.custom_tab_index
 
+# ===================== Tab 1: 上传出勤数据 =====================
 if active_tab == 0:
-    # ==================== 上传出勤数据 ====================
-    # 此处请粘贴原来 with tab_dict["📤 上传出勤数据"]: 下的全部代码
-    # （从 st.title("📤 上传出勤数据") 到该 with 块结束）
-    # 为了不使回答过长，我这里只写注释，您需要手动复制粘贴。
-    # 示例：
-    st.title(_t("attendance_title"))
-    st.markdown(_t("attendance_instructions"))
-    # ... 以下省略，您复制原内容即可 ...
-
-elif active_tab == 1:
-    # ==================== 数据总览 ====================
-    # 粘贴原来 with tab_dict["📊 数据总览"]: 下的全部代码
-    st.title(_t("overview_title"))
-    st.caption(_t("overview_caption"))
-    # ...
-
-elif active_tab == 2:
-    # ==================== 外劳人效分析看板 ====================
-    # 粘贴原来 with tab_dict["📈 外劳人效分析看板"]: 下的全部代码
-    st.title(_t("efficiency_title"))
-    st.caption(_t("efficiency_caption"))
-    # ...
-
-elif active_tab == 3:
-    # ==================== 上传操作量 ====================
-    # 粘贴原来 with tab_dict["📊 上传操作量"]: 下的全部代码
-    st.title(_t("ops_title"))
-    st.markdown(_t("ops_instructions"))
-    # ...
-
-elif active_tab == 4:
-    # ==================== 价卡配置 ====================
-    # 粘贴原来 with tab_dict["💰 价卡配置"]: 下的全部代码
-    st.title(_t("price_title"))
-    # ...
-
-# ===================== Tab 上传出勤数据 =====================
-with tab_dict["📤 上传出勤数据"]:
     st.title(_t("attendance_title"))
     st.markdown(_t("attendance_instructions"))
 
@@ -672,15 +634,9 @@ with tab_dict["📤 上传出勤数据"]:
                 else:
                     wh_label = _t("col_warehouse")
                     date_label = _t("col_date")
-                    # 翻译人员类型
                     translated_combos = []
                     for s, sh, w in combos:
-                        if w == "长期工":
-                            w_trans = _t("worker_long")
-                        elif w == "日结工":
-                            w_trans = _t("worker_daily")
-                        else:
-                            w_trans = w
+                        w_trans = _t("worker_long") if w == "长期工" else (_t("worker_daily") if w == "日结工" else w)
                         translated_combos.append((s, sh, w_trans))
                     col_tuples = [(wh_label, wh_label, wh_label), (date_label, date_label, date_label)] + translated_combos
                     col_index = pd.MultiIndex.from_tuples(col_tuples, names=[_t("col_supplier"), _t("col_shift"), _t("col_worker_type")])
@@ -694,7 +650,7 @@ with tab_dict["📤 上传出勤数据"]:
                     st.session_state["attendance_wide_selected"] = {
                         "warehouses": selected_warehouses,
                         "dates": dates,
-                        "combos": combos,  # 原始组合，用于提交
+                        "combos": combos,
                     }
                     st.rerun()
 
@@ -709,7 +665,7 @@ with tab_dict["📤 上传出勤数据"]:
             if st.button(_t("attendance_submit_btn"), type="primary", use_container_width=True):
                 original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
                 original_dates = st.session_state["attendance_wide_selected"]["dates"]
-                combos = st.session_state["attendance_wide_selected"]["combos"]  # 原始中文
+                combos = st.session_state["attendance_wide_selected"]["combos"]
                 numeric_cols = edited_df.columns[2:]
                 if edited_df[numeric_cols].eq(0).all().all():
                     st.warning(_t("attendance_no_data_warning"))
@@ -719,11 +675,8 @@ with tab_dict["📤 上传出勤数据"]:
                     for wh in original_warehouses:
                         for d in original_dates:
                             row_data = edited_df.iloc[row_idx]
-                            # 获取列名（实际是元组，但值可能是翻译后的，我们使用原始combos来保持一致性）
                             for idx_col, col_tuple in enumerate(numeric_cols):
-                                # col_tuple 是 (supplier, shift, worker_translated)
-                                # 但是数据值是用原始中文存储的，我们直接从combos中取
-                                supplier, shift, worker = combos[idx_col]  # 用原始中文
+                                supplier, shift, worker = combos[idx_col]
                                 val = row_data[col_tuple]
                                 if val and val > 0:
                                     region = REGION_MAPPING.get(wh, "未知")
@@ -775,7 +728,7 @@ with tab_dict["📤 上传出勤数据"]:
     else:
         st.info(_t("attendance_info_generate"))
 
-    # 模板下载（使用翻译后的列名和人员类型）
+    # 模板下载
     st.divider()
     st.caption(_t("attendance_download_template_caption"))
     if selected_warehouses:
@@ -862,8 +815,8 @@ with tab_dict["📤 上传出勤数据"]:
                 use_container_width=True
             )
 
-# ===================== Tab 数据总览 =====================
-with tab_dict["📊 数据总览"]:
+# ===================== Tab 2: 数据总览 =====================
+elif active_tab == 1:
     st.title(_t("overview_title"))
     st.caption(_t("overview_caption"))
     df_raw = get_latest_attendance(user if not is_admin else None)
@@ -893,7 +846,6 @@ with tab_dict["📊 数据总览"]:
         col3.metric(_t("overview_total_records"), total_records)
         col4.metric(_t("overview_uploaders"), total_uploaders)
         st.divider()
-        # 翻译列名
         df_display = df_filtered.rename(columns={
             "区域": _t("col_region"),
             "仓库名称": _t("col_warehouse_name"),
@@ -903,7 +855,6 @@ with tab_dict["📊 数据总览"]:
             "长期工_日结工": _t("col_worker_type"),
             "人数": _t("col_people")
         })
-        # 翻译人员类型值
         if _t("col_worker_type") in df_display.columns:
             df_display[_t("col_worker_type")] = df_display[_t("col_worker_type")].map(
                 lambda x: _t("worker_long") if x == "长期工" else (_t("worker_daily") if x == "日结工" else x)
@@ -930,8 +881,8 @@ with tab_dict["📊 数据总览"]:
             mime="text/csv"
         )
 
-# ===================== Tab 外劳人效分析看板 =====================
-with tab_dict["📈 外劳人效分析看板"]:
+# ===================== Tab 3: 外劳人效分析看板 =====================
+elif active_tab == 2:
     st.title(_t("efficiency_title"))
     st.caption(_t("efficiency_caption"))
     st.markdown("""
@@ -1035,8 +986,8 @@ with tab_dict["📈 外劳人效分析看板"]:
         mime="text/csv"
     )
 
-# ===================== Tab 上传操作量 =====================
-with tab_dict["📊 上传操作量"]:
+# ===================== Tab 4: 上传操作量 =====================
+elif active_tab == 3:
     st.title(_t("ops_title"))
     st.markdown(_t("ops_instructions"))
     st.subheader("📋 " + _t("ops_download_template_btn").replace("📥 ", ""))
@@ -1153,8 +1104,8 @@ with tab_dict["📊 上传操作量"]:
     except Exception as e:
         st.warning(_t("ops_read_data_error", error=str(e)))
 
-# ===================== Tab 价卡配置 =====================
-with tab_dict["💰 价卡配置"]:
+# ===================== Tab 5: 价卡配置 =====================
+else:
     st.title(_t("price_title"))
     if not is_admin:
         st.warning(_t("price_admin_only"))
@@ -1174,7 +1125,6 @@ with tab_dict["💰 价卡配置"]:
                 "失效时间": _t("col_expiry_date")
             }
             df_display = price_df[display_cols].rename(columns=rename_map)
-            # 翻译人员类型值
             if _t("col_worker_type") in df_display.columns:
                 df_display[_t("col_worker_type")] = df_display[_t("col_worker_type")].map(
                     lambda x: _t("worker_long") if x == "长期工" else (_t("worker_daily") if x == "日结工" else x)
