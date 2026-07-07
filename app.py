@@ -352,7 +352,6 @@ tabs = st.tabs(tab_names)
 tab_dict = {name: tabs[i] for i, name in enumerate(tab_names)}
 
 # ===================== Tab 上传出勤数据 =====================
-
 with tab_dict["📤 上传出勤数据"]:
     st.title("📤 上传出勤数据")
     st.markdown("""
@@ -450,12 +449,11 @@ with tab_dict["📤 上传出勤数据"]:
         df_wide = st.session_state["attendance_wide_df"]
         st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
 
-        # 配置前两列固定（sticky），防止滚动时丢失标识
+        # 配置前两列宽度（不设 sticky，避免版本兼容问题）
         column_config = {
-            ('仓库', '', ''): st.column_config.TextColumn("仓库", width=150, sticky="left"),
-            ('日期', '', ''): st.column_config.TextColumn("日期", width=120, sticky="left"),
+            ('仓库', '', ''): st.column_config.TextColumn("仓库", width=150),
+            ('日期', '', ''): st.column_config.TextColumn("日期", width=120),
         }
-        # 仅配置前两列，其他列使用默认设置
         edited_df = st.data_editor(
             df_wide,
             column_config=column_config,
