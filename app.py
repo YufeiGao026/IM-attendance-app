@@ -60,6 +60,10 @@ TRANSLATIONS = {
         "zh": "🌐 语言 / Idioma",
         "pt": "🌐 Idioma / 语言"
     },
+    "bottom_info": {
+        "zh": "登录用户: {user} | 角色: {role} | 数据模式: 云端 TiDB",
+        "pt": "Usuário: {user} | Função: {role} | Modo de dados: TiDB Cloud"
+    },
 
     # ---------- Tab 名称 ----------
     "tab_upload_attendance": {
@@ -358,13 +362,29 @@ TRANSLATIONS = {
         "zh": "✅ 确认上传操作量",
         "pt": "✅ Confirmar upload de volume"
     },
+    "ops_uploading_status": {
+        "zh": "⏳ 正在上传操作量数据...",
+        "pt": "⏳ Enviando dados de volume..."
+    },
+    "ops_upload_success_status": {
+        "zh": "✅ 上传完成！成功 {count} 条",
+        "pt": "✅ Upload concluído! {count} registros"
+    },
+    "ops_upload_warning_status": {
+        "zh": "⚠️ 上传完成！成功 {count} 条，失败 {fail} 条",
+        "pt": "⚠️ Upload concluído! {count} sucessos, {fail} falhas"
+    },
     "ops_upload_success": {
-        "zh": "✅ 操作量数据上传成功！共 {count} 条",
-        "pt": "✅ Dados de volume enviados com sucesso! {count} registros"
+        "zh": "🎉 所有操作量数据已成功上传！",
+        "pt": "🎉 Todos os dados de volume foram enviados com sucesso!"
     },
     "ops_upload_error": {
-        "zh": "❌ 上传失败，请检查数据后重试",
-        "pt": "❌ Falha no upload. Verifique os dados e tente novamente."
+        "zh": "❌ 有 {count} 行上传失败，请检查数据后重试",
+        "pt": "❌ {count} registros falharam. Verifique os dados e tente novamente."
+    },
+    "ops_read_error": {
+        "zh": "❌ 读取文件失败：{error}",
+        "pt": "❌ Falha ao ler o arquivo: {error}"
     },
     "ops_overview_title": {
         "zh": "📊 操作量数据总览",
@@ -414,6 +434,10 @@ TRANSLATIONS = {
         "zh": "📥 导出操作量数据 (CSV)",
         "pt": "📥 Exportar dados de volume (CSV)"
     },
+    "ops_read_data_error": {
+        "zh": "⚠️ 读取操作量数据失败：{error}",
+        "pt": "⚠️ Falha ao ler dados de volume: {error}"
+    },
 
     # ---------- 价卡配置 Tab ----------
     "price_title": {
@@ -452,17 +476,17 @@ TRANSLATIONS = {
         "zh": "📥 下载价卡模板 (Excel)",
         "pt": "📥 Baixar Modelo (Excel)"
     },
+    "price_template_cols": {
+        "zh": "列名：区域、仓库名称、供应商、班次、长期工_日结工、周日_非周日、单价、生效时间、失效时间",
+        "pt": "Colunas: Região, Armazém, Fornecedor, Turno, Mão de Obra, Domingo/Não-Domingo, Preço Unitário, Data de Vigência, Data de Expiração"
+    },
     "price_upload_instruction": {
-        "zh": "📤 上传价卡配置（全量导入）",
-        "pt": "📤 Carregar Tabela de Preços (importação completa)"
+        "zh": "📤 上传价卡配置（自动生成版本）",
+        "pt": "📤 Carregar Tabela de Preços (versão automática)"
     },
     "price_upload_caption": {
-        "zh": "每次上传将作为一个新版本，系统将自动以最新版本为准。相同版本号再次上传会覆盖旧版本。",
-        "pt": "Cada upload cria uma nova versão. O sistema usará automaticamente a versão mais recente. Mesmo número de versão substituirá a versão antiga."
-    },
-    "price_version_label": {
-        "zh": "版本号",
-        "pt": "Número da Versão"
+        "zh": "每次上传将自动生成唯一版本号（时间戳），新版本将自动成为生效价卡。无需手动输入版本号。",
+        "pt": "Cada upload gera automaticamente um número de versão único (timestamp). A nova versão se tornará automaticamente a tabela de preços ativa."
     },
     "price_choose_file": {
         "zh": "选择 Excel 或 CSV",
@@ -471,10 +495,6 @@ TRANSLATIONS = {
     "price_submit_btn": {
         "zh": "确认上传",
         "pt": "Confirmar Upload"
-    },
-    "price_missing_version": {
-        "zh": "❌ 请填写版本号",
-        "pt": "❌ Preencha o número da versão"
     },
     "price_missing_file": {
         "zh": "❌ 请选择文件",
@@ -492,13 +512,9 @@ TRANSLATIONS = {
         "zh": "❌ 单价必须为数字：{error}",
         "pt": "❌ O preço unitário deve ser um número: {error}"
     },
-    "price_version_exists": {
-        "zh": "⚠️ 版本 '{version}' 已存在，已覆盖旧数据",
-        "pt": "⚠️ Versão '{version}' já existe. Substituindo dados antigos."
-    },
     "price_upload_success": {
-        "zh": "✅ 价卡配置上传成功！版本：{version}，共 {count} 条",
-        "pt": "✅ Tabela de preços enviada com sucesso! Versão: {version}, {count} registros"
+        "zh": "✅ 价卡配置上传成功！新版本号：{version}，共 {count} 条",
+        "pt": "✅ Tabela de preços enviada com sucesso! Nova versão: {version}, {count} registros"
     },
     "price_upload_error": {
         "zh": "❌ 上传失败，请重试",
@@ -561,6 +577,18 @@ TRANSLATIONS = {
     "success_general": {
         "zh": "✅ {msg}",
         "pt": "✅ {msg}"
+    },
+    "db_init_error": {
+        "zh": "数据库引擎初始化失败: {error}",
+        "pt": "Falha ao inicializar o motor do banco de dados: {error}"
+    },
+    "db_retry_warning": {
+        "zh": "数据库连接超时，正在重试 ({attempt}/{max})...",
+        "pt": "Tempo limite de conexão com o banco de dados. Tentando novamente ({attempt}/{max})..."
+    },
+    "db_retry_error": {
+        "zh": "重试{max}次后仍失败: {error}",
+        "pt": "Falha após {max} tentativas: {error}"
     }
 }
 
@@ -580,7 +608,7 @@ if "language" not in st.session_state:
     st.session_state.language = "zh"
 
 # ========== 页面配置 ==========
-st.set_page_config(page_title="仓库出勤统计", layout="wide")
+st.set_page_config(page_title=_t("app_title"), layout="wide")
 
 # ========== 日志配置 ==========
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -628,7 +656,7 @@ def init_db_engine():
         )
         return engine
     except Exception as e:
-        st.error(f"数据库引擎初始化失败: {e}")
+        st.error(_t("db_init_error", error=str(e)))
         raise
 
 def get_db_connection():
@@ -647,7 +675,7 @@ def retry_on_db_error(max_retries=3, delay=1):
                 except Exception as e:
                     if "2013" in str(e) or "Lost connection" in str(e):
                         if attempt < max_retries - 1:
-                            st.warning(f"数据库连接超时，正在重试 ({attempt+1}/{max_retries})...")
+                            st.warning(_t("db_retry_warning", attempt=attempt+1, max=max_retries))
                             time.sleep(delay)
                             st.cache_resource.clear()  # 强制重建引擎
                             continue
@@ -898,18 +926,18 @@ if "db_connected" not in st.session_state:
 
 # ========== 登录界面 ==========
 if not st.session_state.logged_in:
-    st.title("🔐 登录")
+    st.title(_t("login_title"))
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        username = st.text_input("用户名")
-        password = st.text_input("密码", type="password")
-        if st.button("登录", use_container_width=True):
+        username = st.text_input(_t("username"))
+        password = st.text_input(_t("password"), type="password")
+        if st.button(_t("login_button"), use_container_width=True):
             if username == VALID_USERNAME and password == VALID_PASSWORD:
                 st.session_state.logged_in = True
                 st.session_state.user = username
                 st.rerun()
             else:
-                st.error("❌ 用户名或密码错误")
+                st.error(_t("login_error"))
     st.stop()
 
 user = st.session_state.user
@@ -918,40 +946,32 @@ is_admin = user in ADMIN_USERS
 # ========== 侧边栏 ==========
 with st.sidebar:
     # 语言选择器
-    lang_options = {"zh": "中文", "pt": "Português"}
     st.selectbox(
-        "🌐 Idioma / 语言",   # 这里可以不用翻译，因为语言选择器本身需要中葡双语显示
-        options=list(lang_options.keys()),
-        format_func=lambda x: lang_options[x],
+        _t("language_selector"),
+        options=list(LANGUAGES.keys()),
+        format_func=lambda x: LANGUAGES[x],
         key="language",
         on_change=lambda: st.rerun()
     )
     st.divider()
     # 用户信息
-    st.write(f"👤 {user} ({'管理员' if is_admin else '普通用户'})")
-    # 登出按钮（可选）
-    if st.button("登出 / Sair"):
+    role_text = _t("user_role_admin") if is_admin else _t("user_role_user")
+    st.write(f"👤 {user} ({role_text})")
+    # 登出按钮
+    if st.button(_t("logout") + " / Sair"):
         st.session_state.logged_in = False
         st.rerun()
 
 # ========== 主界面 ==========
-current_month = datetime.now().strftime("%Y年%m月")
-tab_names = ["📤 上传出勤数据", "📊 数据总览", "📈 外劳人效分析看板", "📊 上传操作量", "💰 价卡配置"]
+# 翻译后的 Tab 名称
+tab_names = [_t("tab_upload_attendance"), _t("tab_overview"), _t("tab_efficiency"), _t("tab_upload_ops"), _t("tab_price_card")]
 tabs = st.tabs(tab_names)
-tab_dict = {name: tabs[i] for i, name in enumerate(tab_names)}
+tab_dict = {_t("tab_upload_attendance"): tabs[0], _t("tab_overview"): tabs[1], _t("tab_efficiency"): tabs[2], _t("tab_upload_ops"): tabs[3], _t("tab_price_card"): tabs[4]}
 
 # ===================== Tab 上传出勤数据 =====================
-with tab_dict["📤 上传出勤数据"]:
-    st.title("📤 上传出勤数据")
-    st.markdown("""
-    ### 操作说明
-    1. 选择 **日期范围** 和 **一个或多个仓库**。
-    2. 点击 **"生成表格"**，系统会生成一个可编辑表格：
-       - 前两列为 **仓库** 和 **日期**。
-       - 其余列为 **供应商 → 班次 → 人员类型** 的三级表头。
-    3. 在对应格子中填写出勤人数。
-    4. 填写完毕后，点击 **"提交数据"**。
-    """)
+with tab_dict[_t("tab_upload_attendance")]:
+    st.title(_t("attendance_title"))
+    st.markdown(_t("attendance_instructions"))
 
     # ------------------ 区域和仓库清单（按用户提供） ------------------
     REGION_WAREHOUSE_MAPPING = {
@@ -990,12 +1010,12 @@ with tab_dict["📤 上传出勤数据"]:
     # ------------------ 筛选条件 ------------------
     col1, col2, col3 = st.columns([2, 2, 3])
     with col1:
-        start_date = st.date_input("📅 开始日期", value=datetime.now().replace(day=1))
+        start_date = st.date_input(_t("attendance_start_date"), value=datetime.now().replace(day=1))
     with col2:
-        end_date = st.date_input("📅 结束日期", value=datetime.now())
+        end_date = st.date_input(_t("attendance_end_date"), value=datetime.now())
     with col3:
         selected_warehouses = st.multiselect(
-            "🏭 选择仓库（可多选）",
+            _t("attendance_select_warehouses"),
             ALL_WAREHOUSES,
             default=ALL_WAREHOUSES[:1] if ALL_WAREHOUSES else []
         )
@@ -1017,17 +1037,17 @@ with tab_dict["📤 上传出勤数据"]:
         return combos
 
     # ------------------ 生成表格按钮 ------------------
-    if st.button("📋 生成表格", use_container_width=True):
+    if st.button(_t("attendance_generate_btn"), use_container_width=True):
         if not selected_warehouses:
-            st.warning("⚠️ 请至少选择一个仓库")
+            st.warning(_t("attendance_no_warehouse_warning"))
         else:
             dates = pd.date_range(start=start_date, end=end_date, freq='D').strftime("%Y-%m-%d").tolist()
             if not dates:
-                st.warning("⚠️ 日期范围无效")
+                st.warning(_t("attendance_invalid_date_warning"))
             else:
                 combos = get_column_combos(selected_warehouses)
                 if not combos:
-                    st.warning("⚠️ 所选仓库在价卡表中无配置，请先上传价卡")
+                    st.warning(_t("attendance_no_price_config"))
                 else:
                     # 构建列 MultiIndex（前两列也设为三层，保持结构一致）
                     col_tuples = [('仓库', '仓库', '仓库'), ('日期', '日期', '日期')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
@@ -1052,7 +1072,7 @@ with tab_dict["📤 上传出勤数据"]:
     # ------------------ 显示可编辑表格 ------------------
     if "attendance_wide_df" in st.session_state:
         df_wide = st.session_state["attendance_wide_df"]
-        st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
+        st.subheader(_t("attendance_table_subheader", rows=len(df_wide), cols=len(df_wide.columns)))
 
         # 移除 column_config，避免 JSON 序列化错误
         edited_df = st.data_editor(
@@ -1066,7 +1086,7 @@ with tab_dict["📤 上传出勤数据"]:
 
         col_submit, col_clear = st.columns([2, 1])
         with col_submit:
-            if st.button("📤 提交数据", type="primary", use_container_width=True):
+            if st.button(_t("attendance_submit_btn"), type="primary", use_container_width=True):
                 original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
                 original_dates = st.session_state["attendance_wide_selected"]["dates"]
                 combos = st.session_state["attendance_wide_selected"]["combos"]
@@ -1074,7 +1094,7 @@ with tab_dict["📤 上传出勤数据"]:
                 numeric_cols = edited_df.columns[2:]
 
                 if edited_df[numeric_cols].eq(0).all().all():
-                    st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
+                    st.warning(_t("attendance_no_data_warning"))
                 else:
                     records = []
                     row_idx = 0
@@ -1101,7 +1121,7 @@ with tab_dict["📤 上传出勤数据"]:
                             row_idx += 1
 
                     if not records:
-                        st.warning("⚠️ 没有找到有效数据（大于0）")
+                        st.warning(_t("attendance_no_records_warning"))
                     else:
                         df_to_submit = pd.DataFrame(records)
                         first_warehouse = records[0]["仓库名称"]
@@ -1114,7 +1134,7 @@ with tab_dict["📤 上传出勤数据"]:
                         try:
                             success_count, fail_count = save_attendance_to_db(df_to_submit)
                             if fail_count == 0:
-                                st.success(f"✅ 全部 {success_count} 条数据上传成功！版本号：{version}")
+                                st.success(_t("attendance_success", count=success_count, version=version))
                                 st.balloons()
                                 # 重置表格为零
                                 zero_rows = []
@@ -1126,12 +1146,12 @@ with tab_dict["📤 上传出勤数据"]:
                                     columns=edited_df.columns
                                 )
                             else:
-                                st.error(f"❌ 上传失败 {fail_count} 条，请检查数据后重试")
+                                st.error(_t("attendance_error", count=fail_count))
                         except Exception as e:
-                            st.error(f"❌ 上传出错：{e}")
+                            st.error(_t("attendance_upload_error", error=str(e)))
 
         with col_clear:
-            if st.button("🗑️ 清空表格", use_container_width=True):
+            if st.button(_t("attendance_clear_btn"), use_container_width=True):
                 if "attendance_wide_df" in st.session_state:
                     original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
                     original_dates = st.session_state["attendance_wide_selected"]["dates"]
@@ -1146,11 +1166,11 @@ with tab_dict["📤 上传出勤数据"]:
                     )
 
     else:
-        st.info("👆 请选择日期范围、仓库，并点击“生成表格”")
+        st.info(_t("attendance_info_generate"))
 
     # ------------------ 模板下载（使用 openpyxl 手工构建三层表头） ------------------
     st.divider()
-    st.caption("💡 下载 Excel 模板，表头为三层（供应商 → 班次 → 人员类型），无序号列，填写后复制粘贴到线上表格。")
+    st.caption(_t("attendance_download_template_caption"))
     if selected_warehouses:
         combos_sample = get_column_combos(selected_warehouses)
         if combos_sample:
@@ -1230,7 +1250,7 @@ with tab_dict["📤 上传出勤数据"]:
             template_bytes = output.getvalue()
 
             st.download_button(
-                label="📥 下载模板 (Excel)",
+                label=_t("attendance_download_btn"),
                 data=template_bytes,
                 file_name="出勤模板.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1238,13 +1258,13 @@ with tab_dict["📤 上传出勤数据"]:
             )
 
 # ===================== Tab 数据总览 =====================
-with tab_dict["📊 数据总览"]:
-    st.title("📊 数据总览")
-    st.caption("仅展示每个仓库每月最新版本的数据，可通过筛选查看特定时间和站点")
+with tab_dict[_t("tab_overview")]:
+    st.title(_t("overview_title"))
+    st.caption(_t("overview_caption"))
     
     df_raw = get_latest_attendance(user if not is_admin else None)
     if len(df_raw) == 0:
-        st.info("📭 暂无数据，请先上传")
+        st.info(_t("overview_no_data"))
     else:
         df_raw["年月"] = pd.to_datetime(df_raw["日期"]).dt.strftime("%Y-%m")
         available_months = sorted(df_raw["年月"].unique(), reverse=True)
@@ -1252,9 +1272,9 @@ with tab_dict["📊 数据总览"]:
         
         col_f1, col_f2 = st.columns(2)
         with col_f1:
-            selected_month = st.selectbox("📅 选择年月", ["全部"] + available_months, key="overview_month")
+            selected_month = st.selectbox(_t("overview_month"), ["全部"] + available_months, key="overview_month")
         with col_f2:
-            selected_site = st.selectbox("🏢 选择站点", ["全部"] + available_sites, key="overview_site")
+            selected_site = st.selectbox(_t("overview_site"), ["全部"] + available_sites, key="overview_site")
         
         df_filtered = df_raw.copy()
         if selected_month != "全部":
@@ -1268,15 +1288,15 @@ with tab_dict["📊 数据总览"]:
         total_uploaders = df_filtered["上传人"].nunique()
         
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("🏢 仓库数", total_warehouses)
-        col2.metric("👷 总外劳人数", total_people)
-        col3.metric("📋 总记录数", total_records)
-        col4.metric("👤 上传人数", total_uploaders)
+        col1.metric(_t("overview_warehouses"), total_warehouses)
+        col2.metric(_t("overview_total_people"), total_people)
+        col3.metric(_t("overview_total_records"), total_records)
+        col4.metric(_t("overview_uploaders"), total_uploaders)
         
         st.divider()
         st.dataframe(df_filtered, use_container_width=True)
         
-        st.subheader("🏢 各仓库汇总")
+        st.subheader(_t("overview_warehouse_summary"))
         warehouse_summary = df_filtered.groupby("仓库名称").agg({
             "人数": "sum",
             "区域": "first"
@@ -1284,19 +1304,19 @@ with tab_dict["📊 数据总览"]:
         warehouse_summary.columns = ["仓库名称", "总人数", "区域"]
         st.dataframe(warehouse_summary, use_container_width=True)
         
-        st.subheader("📥 导出数据")
+        st.subheader(_t("overview_export"))
         csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
         st.download_button(
-            label="📥 导出当前数据 (CSV)",
+            label=_t("overview_export_csv"),
             data=csv,
             file_name=f"仓库出勤汇总_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv"
         )
 
 # ===================== Tab 外劳人效分析看板 =====================
-with tab_dict["📈 外劳人效分析看板"]:
-    st.title("📈 外劳人效分析看板")
-    st.caption("核心指标：人效、日均操作量、日均出勤人数、总出勤人天、单人天成本")
+with tab_dict[_t("tab_efficiency")]:
+    st.title(_t("efficiency_title"))
+    st.caption(_t("efficiency_caption"))
     
     st.markdown("""
     <style>
@@ -1316,29 +1336,29 @@ with tab_dict["📈 外劳人效分析看板"]:
     try:
         merged = generate_efficiency_data()
         if len(merged) == 0:
-            st.info("📭 当前无数据，请先上传出勤数据和操作量数据")
+            st.info(_t("efficiency_no_data"))
             st.stop()
     except Exception as e:
-        st.error(f"❌ 读取数据失败：{e}")
+        st.error(_t("efficiency_read_error", error=str(e)))
         st.stop()
     
     # 筛选条件
     available_months = sorted(merged["年月"].unique(), reverse=True)
     month_options = ["全部"] + available_months
     
-    st.subheader("🔍 筛选条件")
+    st.subheader(_t("efficiency_filters"))
     col_f1, col_f2, col_f3 = st.columns(3)
     with col_f1:
-        selected_month = st.selectbox("年月", month_options, key="efficiency_month")
+        selected_month = st.selectbox(_t("efficiency_month"), month_options, key="efficiency_month")
     with col_f2:
         regions = sorted(merged["区域"].unique())
-        selected_region = st.selectbox("国家/区域", ["全部"] + list(regions), key="efficiency_region")
+        selected_region = st.selectbox(_t("efficiency_region"), ["全部"] + list(regions), key="efficiency_region")
     with col_f3:
         if selected_region == "全部":
             filtered_warehouses = sorted(merged["仓库名称"].unique())
         else:
             filtered_warehouses = sorted(merged[merged["区域"] == selected_region]["仓库名称"].unique())
-        selected_warehouse = st.selectbox("站点", ["全部"] + list(filtered_warehouses), key="efficiency_site")
+        selected_warehouse = st.selectbox(_t("efficiency_site"), ["全部"] + list(filtered_warehouses), key="efficiency_site")
     
     # 应用筛选
     filtered_df = merged.copy()
@@ -1350,7 +1370,7 @@ with tab_dict["📈 外劳人效分析看板"]:
         filtered_df = filtered_df[filtered_df["仓库名称"] == selected_warehouse]
     
     if len(filtered_df) == 0:
-        st.warning("该筛选条件下无数据")
+        st.warning(_t("efficiency_filter_no_data"))
         st.stop()
     
     # 加载价卡（最新版本）
@@ -1389,19 +1409,19 @@ with tab_dict["📈 外劳人效分析看板"]:
     unit_cost = total_cost / total_person_days if total_person_days > 0 else 0
     
     # 显示总体指标卡片
-    st.subheader("📊 核心指标")
+    st.subheader(_t("efficiency_core_metrics"))
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("人效", f"{avg_efficiency:.0f}")
-    col2.metric("日均操作量", f"{daily_volume:,.0f}")
-    col3.metric("日均出勤人数", f"{daily_headcount:.0f}")
-    col4.metric("总出勤人天", f"{total_person_days:,.0f}")
-    col5.metric("单人天成本", f"R${unit_cost:.2f}")
-    st.caption("📌 人效单位：票/人/天 | 日均操作量单位：票 | 日均出勤人数单位：人 | 总出勤人天单位：人天 | 单人天成本单位：R$")
+    col1.metric(_t("efficiency_metric_efficiency"), f"{avg_efficiency:.0f}")
+    col2.metric(_t("efficiency_metric_daily_volume"), f"{daily_volume:,.0f}")
+    col3.metric(_t("efficiency_metric_daily_headcount"), f"{daily_headcount:.0f}")
+    col4.metric(_t("efficiency_metric_total_person_days"), f"{total_person_days:,.0f}")
+    col5.metric(_t("efficiency_metric_unit_cost"), f"R${unit_cost:.2f}")
+    st.caption(_t("efficiency_metric_unit"))
     
     # =============================================================
     # 2. 各站点汇总（同样基于各站点的实际天数）
     # =============================================================
-    st.subheader("📋 各站点汇总")
+    st.subheader(_t("efficiency_station_summary"))
     stations = filtered_df["仓库名称"].unique()
     summary_rows = []
     for station in stations:
@@ -1449,29 +1469,20 @@ with tab_dict["📈 外劳人效分析看板"]:
     st.dataframe(result_df, use_container_width=True)
     
     # 导出
-    st.subheader("📥 导出数据")
+    st.subheader(_t("efficiency_export"))
     csv = result_df.to_csv(index=False).encode("utf-8-sig")
     st.download_button(
-        label="📥 导出当前汇总 (CSV)",
+        label=_t("efficiency_export_csv"),
         data=csv,
         file_name=f"外劳人效分析_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         mime="text/csv"
     )
 
 # ===================== Tab 上传操作量 =====================
-with tab_dict["📊 上传操作量"]:
-    st.title("📊 操作量数据上传")
-    st.markdown("""
-    ---
-    ### 📋 使用说明
-    1. 点击下方 **"下载模板"** 按钮，下载 Excel 模板
-    2. 按模板格式填写数据（**列名必须与模板完全一致**）
-    3. 填写完成后，点击 **"选择文件"** 上传
-    4. 系统将自动记录上传人和上传时间
-    5. **同一站点+日期+班次的数据不可重复上传**
-    ---
-    """)
-    st.subheader("📋 下载操作量模板")
+with tab_dict[_t("tab_upload_ops")]:
+    st.title(_t("ops_title"))
+    st.markdown(_t("ops_instructions"))
+    st.subheader("📋 " + _t("ops_download_template_btn").replace("📥 ", ""))
     template_ops_df = pd.DataFrame({
         "biz_date": ["2026-06-01"],
         "station_code": ["CDC_SP"],
@@ -1487,7 +1498,7 @@ with tab_dict["📊 上传操作量"]:
     col_ops_download, _ = st.columns([1, 3])
     with col_ops_download:
         st.download_button(
-            label="📥 下载操作量模板 (Excel)",
+            label=_t("ops_download_template_btn"),
             data=ops_template_bytes,
             file_name="操作量模板.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1495,57 +1506,57 @@ with tab_dict["📊 上传操作量"]:
         )
     st.caption("列名：biz_date、station_code、station_name、class_name、is_conso、volume（is_conso 为 0 或 1）")
     st.divider()
-    st.subheader("📂 上传操作量文件")
-    ops_uploaded_file = st.file_uploader("选择 Excel 或 CSV 文件", type=["xlsx", "xls", "csv"], key="ops_uploader")
+    st.subheader(_t("ops_upload_file"))
+    ops_uploaded_file = st.file_uploader(_t("ops_choose_file"), type=["xlsx", "xls", "csv"], key="ops_uploader")
     if ops_uploaded_file:
         try:
             df_ops = pd.read_excel(ops_uploaded_file) if not ops_uploaded_file.name.endswith(".csv") else pd.read_csv(ops_uploaded_file)
             if list(df_ops.columns) != OPS_COLS:
-                st.error("❌ 列名与模板不一致！")
+                st.error(_t("ops_invalid_columns"))
                 st.write("模板列名：", OPS_COLS)
                 st.write("您的列名：", list(df_ops.columns))
                 st.stop()
             df_ops["biz_date"] = pd.to_datetime(df_ops["biz_date"]).dt.strftime("%Y-%m-%d")
             df_ops["volume"] = pd.to_numeric(df_ops["volume"])
             df_ops["is_conso"] = pd.to_numeric(df_ops["is_conso"])
-            st.success(f"✅ 校验通过！共 {len(df_ops)} 行数据待上传")
+            st.success(_t("ops_validation_passed", count=len(df_ops)))
             st.dataframe(df_ops.head(10), use_container_width=True)
-            if st.button("✅ 确认上传操作量", use_container_width=True):
-                with st.status("⏳ 正在上传操作量数据...", expanded=True) as status:
+            if st.button(_t("ops_submit_btn"), use_container_width=True):
+                with st.status(_t("ops_uploading_status"), expanded=True) as status:
                     df_ops["上传人"] = user
                     df_ops["上传时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     df_ops["版本号"] = datetime.now().strftime("%Y%m%d") + "V1"
                     success_count, fail_count = save_operations_to_db(df_ops)
                     if fail_count == 0:
-                        status.update(label=f"✅ 上传完成！成功 {success_count} 条", state="complete")
+                        status.update(label=_t("ops_upload_success_status", count=success_count), state="complete")
                     else:
-                        status.update(label=f"⚠️ 上传完成！成功 {success_count} 条，失败 {fail_count} 条", state="error")
+                        status.update(label=_t("ops_upload_warning_status", count=success_count, fail=fail_count), state="error")
                     st.write(f"👤 上传人：**{user}**")
                     st.write(f"📅 上传时间：**{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}**")
                     st.write(f"📊 总行数：{len(df_ops)}")
                     if fail_count == 0:
-                        st.success("🎉 所有操作量数据已成功上传！")
+                        st.success(_t("ops_upload_success"))
                         st.rerun()
                     else:
-                        st.error(f"❌ 有 {fail_count} 行上传失败，请检查数据后重试")
+                        st.error(_t("ops_upload_error", count=fail_count))
         except Exception as e:
-            st.error(f"❌ 读取文件失败：{e}")
+            st.error(_t("ops_read_error", error=str(e)))
     st.divider()
-    st.subheader("📊 操作量数据总览")
-    st.caption("展示已上传的操作量数据，可按年月和站点筛选")
+    st.subheader(_t("ops_overview_title"))
+    st.caption(_t("ops_overview_caption"))
     try:
         ops_df = get_operation_data()
         if len(ops_df) == 0:
-            st.info("📭 暂无操作量数据，请先上传")
+            st.info(_t("ops_no_data"))
         else:
             ops_df["年月"] = pd.to_datetime(ops_df["日期"]).dt.strftime("%Y-%m")
             available_months_ops = sorted(ops_df["年月"].unique(), reverse=True)
             available_sites_ops = sorted(ops_df["仓库名称"].unique())
             col_f1_ops, col_f2_ops = st.columns(2)
             with col_f1_ops:
-                selected_month_ops = st.selectbox("📅 选择年月", ["全部"] + available_months_ops, key="ops_month")
+                selected_month_ops = st.selectbox(_t("ops_month"), ["全部"] + available_months_ops, key="ops_month")
             with col_f2_ops:
-                selected_site_ops = st.selectbox("🏢 选择站点", ["全部"] + available_sites_ops, key="ops_site")
+                selected_site_ops = st.selectbox(_t("ops_site"), ["全部"] + available_sites_ops, key="ops_site")
             ops_filtered = ops_df.copy()
             if selected_month_ops != "全部":
                 ops_filtered = ops_filtered[ops_filtered["年月"] == selected_month_ops]
@@ -1556,12 +1567,12 @@ with tab_dict["📊 上传操作量"]:
             total_ops_sites = ops_filtered["仓库名称"].nunique()
             total_ops_days = ops_filtered["日期"].nunique()
             col1, col2, col3, col4 = st.columns(4)
-            col1.metric("📋 总记录数", total_ops_records)
-            col2.metric("📦 总操作量", f"{total_ops_volume:,}")
-            col3.metric("🏢 站点数", total_ops_sites)
-            col4.metric("📅 天数", total_ops_days)
+            col1.metric(_t("ops_total_records"), total_ops_records)
+            col2.metric(_t("ops_total_volume"), f"{total_ops_volume:,}")
+            col3.metric(_t("ops_warehouses"), total_ops_sites)
+            col4.metric(_t("ops_days"), total_ops_days)
             st.divider()
-            st.subheader("🏢 各站点操作量汇总")
+            st.subheader(_t("ops_station_summary"))
             station_summary = ops_filtered.groupby("仓库名称").agg({
                 "操作量": "sum",
                 "日期": "nunique"
@@ -1569,38 +1580,38 @@ with tab_dict["📊 上传操作量"]:
             station_summary.columns = ["站点名称", "总操作量", "天数"]
             station_summary["日均操作量"] = (station_summary["总操作量"] / station_summary["天数"]).round(0)
             st.dataframe(station_summary, use_container_width=True)
-            st.subheader("📥 导出操作量数据")
+            st.subheader(_t("ops_export"))
             ops_csv = ops_filtered.to_csv(index=False).encode("utf-8-sig")
             st.download_button(
-                label="📥 导出操作量数据 (CSV)",
+                label=_t("ops_export_csv"),
                 data=ops_csv,
                 file_name=f"操作量数据_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv"
             )
     except Exception as e:
-        st.warning(f"⚠️ 读取操作量数据失败：{e}")
+        st.warning(_t("ops_read_data_error", error=str(e)))
 
 # ===================== Tab 价卡配置 =====================
-with tab_dict["💰 价卡配置"]:
-    st.title("💰 价卡配置")
+with tab_dict[_t("tab_price_card")]:
+    st.title(_t("price_title"))
     if not is_admin:
-        st.warning("仅管理员（Ivy_Gao）可管理价卡配置")
+        st.warning(_t("price_admin_only"))
         price_df = get_price_card_data()
         if len(price_df) > 0:
-            st.subheader("📋 当前价卡列表")
+            st.subheader(_t("price_current_list"))
             display_cols = [col for col in PRICE_CARD_COLS if col in price_df.columns]
             st.dataframe(price_df[display_cols], use_container_width=True)
         else:
-            st.info("暂无价卡配置，请联系管理员上传")
+            st.info(_t("price_no_config"))
         st.stop()
-    st.success("管理员模式：可下载模板、上传价卡（版本控制，全量导入）")
+    st.success(_t("price_admin_mode"))
     price_df = get_price_card_data()
     if len(price_df) > 0:
         latest_version = price_df["版本号"].max()
-        st.info(f"📌 当前生效版本：**{latest_version}**")
+        st.info(_t("price_current_version", version=latest_version))
     else:
-        st.info("📌 暂无价卡配置，请上传")
-    st.subheader("📋 下载价卡模板")
+        st.info(_t("price_no_version"))
+    st.subheader(_t("price_download_template"))
     price_template_df = pd.DataFrame({
         "区域": ["FM"],
         "仓库名称": ["TP IMN"],
@@ -1619,91 +1630,88 @@ with tab_dict["💰 价卡配置"]:
     col_t1, col_t2 = st.columns([1, 3])
     with col_t1:
         st.download_button(
-            label="📥 下载价卡模板 (Excel)",
+            label=_t("price_download_btn"),
             data=price_template_bytes,
             file_name="价卡配置模板.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    st.caption("列名：区域、仓库名称、供应商、班次、长期工_日结工、周日_非周日、单价、生效时间、失效时间")
+    st.caption(_t("price_template_cols"))
     st.divider()
 
+    st.subheader(_t("price_upload_instruction"))
+    st.caption(_t("price_upload_caption"))
+    with st.form("upload_price_version_form"):
+        uploaded_price_file = st.file_uploader(_t("price_choose_file"), type=["xlsx", "xls", "csv"], key="price_uploader")
+        submit_price = st.form_submit_button(_t("price_submit_btn"))
 
-    st.subheader("📤 上传价卡配置（自动生成版本）")
-st.caption("每次上传将自动生成唯一版本号（时间戳），新版本将自动成为生效价卡。无需手动输入版本号。")
-with st.form("upload_price_version_form"):
-    # 移除了版本号输入框
-    uploaded_price_file = st.file_uploader("选择 Excel 或 CSV", type=["xlsx", "xls", "csv"], key="price_uploader")
-    submit_price = st.form_submit_button("确认上传")
-
-if submit_price:
-    if uploaded_price_file is None:
-        st.error("❌ 请选择文件")
-    else:
-        try:
-            df_price = pd.read_excel(uploaded_price_file) if not uploaded_price_file.name.endswith(".csv") else pd.read_csv(uploaded_price_file)
-            if list(df_price.columns) != PRICE_CARD_COLS:
-                st.error("❌ 列名与模板不一致！")
-                st.write("模板列名：", PRICE_CARD_COLS)
-                st.write("您的列名：", list(df_price.columns))
-                st.stop()
+    if submit_price:
+        if uploaded_price_file is None:
+            st.error(_t("price_missing_file"))
+        else:
             try:
-                df_price["生效时间"] = pd.to_datetime(df_price["生效时间"]).dt.strftime("%Y-%m-%d")
-                df_price["失效时间"] = pd.to_datetime(df_price["失效时间"]).dt.strftime("%Y-%m-%d")
+                df_price = pd.read_excel(uploaded_price_file) if not uploaded_price_file.name.endswith(".csv") else pd.read_csv(uploaded_price_file)
+                if list(df_price.columns) != PRICE_CARD_COLS:
+                    st.error(_t("price_invalid_columns"))
+                    st.write("模板列名：", PRICE_CARD_COLS)
+                    st.write("您的列名：", list(df_price.columns))
+                    st.stop()
+                try:
+                    df_price["生效时间"] = pd.to_datetime(df_price["生效时间"]).dt.strftime("%Y-%m-%d")
+                    df_price["失效时间"] = pd.to_datetime(df_price["失效时间"]).dt.strftime("%Y-%m-%d")
+                except Exception as e:
+                    st.error(_t("price_date_error", error=str(e)))
+                    st.stop()
+                try:
+                    df_price["单价"] = pd.to_numeric(df_price["单价"])
+                except Exception as e:
+                    st.error(_t("price_price_error", error=str(e)))
+                    st.stop()
+
+                # ===== 自动生成版本号 =====
+                version_name = datetime.now().strftime("%Y%m%d%H%M%S")
+
+                df_price["上传人"] = user
+                df_price["上传时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                df_price["版本号"] = version_name
+
+                success_count, fail_count = save_price_card_to_db(df_price)
+                if fail_count == 0:
+                    st.success(_t("price_upload_success", version=version_name, count=len(df_price)))
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error(_t("price_upload_error"))
             except Exception as e:
-                st.error(f"❌ 日期格式有误：{e}")
-                st.stop()
-            try:
-                df_price["单价"] = pd.to_numeric(df_price["单价"])
-            except Exception as e:
-                st.error(f"❌ 单价必须为数字：{e}")
-                st.stop()
-
-            # ===== 自动生成版本号（精确到秒，确保唯一且为最新） =====
-            from datetime import datetime  # 脚本顶部已有，但为了明确可再写一次
-            version_name = datetime.now().strftime("%Y%m%d%H%M%S")  # 例如 20260707153045
-
-            # 不再检查是否存在，直接插入新版本（历史版本保留，但查询时取最大版本）
-            df_price["上传人"] = user
-            df_price["上传时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            df_price["版本号"] = version_name
-
-            success_count, fail_count = save_price_card_to_db(df_price)
-            if fail_count == 0:
-                st.success(f"✅ 价卡配置上传成功！新版本号：{version_name}，共 {len(df_price)} 条")
-                st.balloons()
-                st.rerun()  # 刷新页面显示最新数据
-            else:
-                st.error(f"❌ 上传失败，请重试")
-        except Exception as e:
-            st.error(f"❌ 读取文件失败：{e}")
+                st.error(_t("price_read_error", error=str(e)))
     st.divider()
-    st.subheader("📋 当前价卡列表")
+    st.subheader(_t("price_current_list"))
     price_df = get_price_card_data()
     if len(price_df) > 0:
         latest_version = price_df["版本号"].max()
         latest_df = price_df[price_df["版本号"] == latest_version]
-        st.caption(f"✅ 当前版本：**{latest_version}** | 上传人：{latest_df['上传人'].iloc[0] if '上传人' in latest_df.columns else '-'}")
+        uploader_name = latest_df['上传人'].iloc[0] if '上传人' in latest_df.columns else '-'
+        st.caption(_t("price_current_version_detail", version=latest_version, uploader=uploader_name))
         display_cols = [col for col in PRICE_CARD_COLS if col in latest_df.columns]
         st.dataframe(latest_df[display_cols], use_container_width=True)
-        st.subheader("📥 导出当前版本价卡")
+        st.subheader(_t("price_export_current"))
         price_csv = latest_df[display_cols].to_csv(index=False).encode("utf-8-sig")
         st.download_button(
-            label=f"📥 导出价卡 ({latest_version})",
+            label=_t("price_export_btn", version=latest_version),
             data=price_csv,
             file_name=f"价卡配置_{latest_version}_{datetime.now().strftime('%Y%m%d')}.csv",
             mime="text/csv"
         )
-        with st.expander("📜 查看所有历史版本"):
+        with st.expander(_t("price_history_expander")):
             version_summary = price_df.groupby("版本号").agg({
                 "上传时间": "first",
                 "区域": "count"
             }).reset_index()
-            version_summary.columns = ["版本号", "上传时间", "记录数"]
-            version_summary = version_summary.sort_values("上传时间", ascending=False)
+            version_summary.columns = [_t("price_history_version"), _t("price_history_upload_time"), _t("price_history_records")]
+            version_summary = version_summary.sort_values(_t("price_history_upload_time"), ascending=False)
             st.dataframe(version_summary, use_container_width=True)
             selected_version = st.selectbox(
-                "选择版本查看详情",
-                options=version_summary["版本号"].tolist()
+                _t("price_select_version"),
+                options=version_summary[_t("price_history_version")].tolist()
             )
             if selected_version:
                 version_detail = price_df[price_df["版本号"] == selected_version]
@@ -1711,13 +1719,14 @@ if submit_price:
                 st.dataframe(detail_display, use_container_width=True)
                 detail_csv = detail_display.to_csv(index=False).encode("utf-8-sig")
                 st.download_button(
-                    label=f"📥 导出 {selected_version}",
+                    label=_t("price_export_version_btn", version=selected_version),
                     data=detail_csv,
                     file_name=f"价卡配置_{selected_version}.csv",
                     mime="text/csv"
                 )
     else:
-        st.info("暂无价卡配置，请上传")
+        st.info(_t("price_no_config"))
 
 # ========== 底部信息 ==========
-st.caption(f"登录用户: {user} | 角色: {'管理员' if is_admin else '普通用户'} | 数据模式: 云端 TiDB")
+role_text = _t("user_role_admin") if is_admin else _t("user_role_user")
+st.caption(_t("bottom_info", user=user, role=role_text))
