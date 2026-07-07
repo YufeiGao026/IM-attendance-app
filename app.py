@@ -915,6 +915,25 @@ if not st.session_state.logged_in:
 user = st.session_state.user
 is_admin = user in ADMIN_USERS
 
+# ========== 侧边栏 ==========
+with st.sidebar:
+    # 语言选择器
+    lang_options = {"zh": "中文", "pt": "Português"}
+    st.selectbox(
+        "🌐 Idioma / 语言",   # 这里可以不用翻译，因为语言选择器本身需要中葡双语显示
+        options=list(lang_options.keys()),
+        format_func=lambda x: lang_options[x],
+        key="language",
+        on_change=lambda: st.rerun()
+    )
+    st.divider()
+    # 用户信息
+    st.write(f"👤 {user} ({'管理员' if is_admin else '普通用户'})")
+    # 登出按钮（可选）
+    if st.button("登出 / Sair"):
+        st.session_state.logged_in = False
+        st.rerun()
+
 # ========== 主界面 ==========
 current_month = datetime.now().strftime("%Y年%m月")
 tab_names = ["📤 上传出勤数据", "📊 数据总览", "📈 外劳人效分析看板", "📊 上传操作量", "💰 价卡配置"]
