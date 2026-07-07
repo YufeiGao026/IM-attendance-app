@@ -422,8 +422,8 @@ with tab_dict["📤 上传出勤数据"]:
                 if not combos:
                     st.warning("⚠️ 所选仓库在价卡表中无配置，请先上传价卡")
                 else:
-                    # 构建列 MultiIndex：前两列为 '仓库' 和 '日期'，其余为 (供应商, 班次, 人员类型)
-                    col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
+                    # 构建列 MultiIndex：前两列也设为三层（避免导出错误）
+                    col_tuples = [('仓库', '仓库', '仓库'), ('日期', '日期', '日期')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
                     col_index = pd.MultiIndex.from_tuples(col_tuples)
 
                     # 生成行数据：每个仓库每天一行
@@ -449,10 +449,10 @@ with tab_dict["📤 上传出勤数据"]:
         df_wide = st.session_state["attendance_wide_df"]
         st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
 
-        # 配置前两列宽度（不设 sticky，避免版本兼容问题）
+        # 配置前两列宽度（仅宽度，无颜色）
         column_config = {
-            ('仓库', '', ''): st.column_config.TextColumn("仓库", width=150),
-            ('日期', '', ''): st.column_config.TextColumn("日期", width=120),
+            ('仓库', '仓库', '仓库'): st.column_config.TextColumn("仓库", width=150),
+            ('日期', '日期', '日期'): st.column_config.TextColumn("日期", width=120),
         }
         edited_df = st.data_editor(
             df_wide,
@@ -471,6 +471,7 @@ with tab_dict["📤 上传出勤数据"]:
                 original_dates = st.session_state["attendance_wide_selected"]["dates"]
                 combos = st.session_state["attendance_wide_selected"]["combos"]
 
+                # 获取数值列（跳过前两列）
                 numeric_cols = edited_df.columns[2:]
                 if edited_df[numeric_cols].eq(0).all().all():
                     st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
@@ -543,23 +544,23 @@ with tab_dict["📤 上传出勤数据"]:
     else:
         st.info("👆 请选择日期范围、仓库，并点击“生成表格”")
 
-    # ------------------ 模板下载（三层表头，无序号列） ------------------
+    # ------------------ 模板下载（三层表头，不合并单元格，无序号列） ------------------
     st.divider()
-    st.caption("💡 下载 Excel 模板，表头为三层（供应商 → 班次 → 人员类型），无序号列，填写后复制粘贴到线上表格。")
+    st.caption("💡 下载 Excel 模板，表头为三层（供应商 → 班次 → 人员类型），不合并单元格，无序号列，填写后复制粘贴到线上表格。")
     if selected_warehouses:
         combos_sample = get_column_combos(selected_warehouses)
         if combos_sample:
             sample_wh = selected_warehouses[0]
             sample_dates = [datetime.now().strftime("%Y-%m-%d")]
-            # 构建 MultiIndex 列
-            col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(s, sh, w) for s, sh, w in combos_sample]
+            # 构建与线上一致的 MultiIndex 列（前两列三层）
+            col_tuples = [('仓库', '仓库', '仓库'), ('日期', '日期', '日期')] + [(s, sh, w) for s, sh, w in combos_sample]
             col_index = pd.MultiIndex.from_tuples(col_tuples)
             row_data = [sample_wh, sample_dates[0]] + [0] * len(combos_sample)
             sample_df = pd.DataFrame([row_data], columns=col_index)
             output = BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                # 不保留行索引，并合并相同表头单元格
-                sample_df.to_excel(writer, sheet_name="出勤数据", index=False, merge_cells=True)
+                # 关键：merge_cells=False 避免合并错误，表头仍为三层
+                sample_df.to_excel(writer, sheet_name="出勤数据", index=False, merge_cells=False)
             template_bytes = output.getvalue()
             st.download_button(
                 label="📥 下载模板 (Excel)",
