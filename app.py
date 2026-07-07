@@ -384,7 +384,7 @@ with tab_dict["📤 上传出勤数据"]:
     with col1:
         selected_warehouse = st.selectbox("🏭 仓库", all_warehouses)
     with col2:
-        selected_month = st.date_input("📅 年月", value=datetime.now().replace(day=1), format="YYYY-MM")
+        selected_month = st.date_input("📅 年月", value=datetime.now().replace(day=1))
         month_str = selected_month.strftime("%Y-%m")
     with col3:
         selected_shift = st.selectbox("🕒 班次", ["T1", "T2", "T3"])
