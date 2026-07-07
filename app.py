@@ -358,7 +358,7 @@ with tab_dict["📤 上传出勤数据"]:
     ### 操作说明
     1. 选择 **日期范围** 和 **一个或多个仓库**。
     2. 点击 **“生成表格”**，系统会生成一个多级表头的填写表格：
-       - **行**：每个仓库每天一行。
+       - **行**：每个仓库每天一行（行标签为“仓库 | 日期”）。
        - **列**：供应商 → 班次 → 人员类型（三层级联）。
     3. 在对应格子中填写出勤人数。
     4. 填写完毕后，点击 **“提交数据”**。
@@ -374,7 +374,6 @@ with tab_dict["📤 上传出勤数据"]:
     if not all_warehouses:
         all_warehouses = ["CDC SP", "CDC RJ", "CDC MG", "TP BAR", "TP IMN", "TP IMG", "PA GUA", "Drop BRA", "GLP Guarulhos"]
 
-    # 区域映射
     REGION_MAPPING = {
         "CDC SP": "东南区", "CDC RJ": "南区", "CDC MG": "北区",
         "TP BAR": "FM", "TP IMN": "FM", "TP IMG": "FM",
@@ -397,13 +396,10 @@ with tab_dict["📤 上传出勤数据"]:
         price_df = get_price_card_data()
         if price_df.empty:
             return []
-        # 筛选所选仓库的价卡数据
         filtered = price_df[price_df["仓库名称"].isin(warehouses)]
         if filtered.empty:
             return []
-        # 提取三列并去重
         combos = filtered[["供应商", "班次", "长期工_日结工"]].drop_duplicates().values.tolist()
-        # 按供应商、班次、人员类型排序
         combos = sorted(combos, key=lambda x: (x[0], x[1], x[2]))
         return combos
 
@@ -412,28 +408,24 @@ with tab_dict["📤 上传出勤数据"]:
         if not selected_warehouses:
             st.warning("⚠️ 请至少选择一个仓库")
         else:
-            # 生成日期列表
             dates = pd.date_range(start=start_date, end=end_date, freq='D').strftime("%Y-%m-%d").tolist()
             if not dates:
                 st.warning("⚠️ 日期范围无效")
             else:
-                # 获取列组合
                 combos = get_column_combos(selected_warehouses)
                 if not combos:
                     st.warning("⚠️ 所选仓库在价卡表中无配置，请先上传价卡")
                 else:
-                    # 构建 MultiIndex 列索引：供应商 -> 班次 -> 人员类型
+                    # 创建列 MultiIndex
                     col_tuples = [(supplier, shift, worker) for supplier, shift, worker in combos]
                     col_index = pd.MultiIndex.from_tuples(col_tuples, names=["供应商", "班次", "人员类型"])
 
-                    # 构建 MultiIndex 行索引：仓库 -> 日期
-                    row_tuples = [(wh, date) for wh in selected_warehouses for date in dates]
-                    row_index = pd.MultiIndex.from_tuples(row_tuples, names=["仓库", "日期"])
+                    # 创建行索引：单级字符串 "仓库|日期"
+                    row_labels = [f"{wh}|{d}" for wh in selected_warehouses for d in dates]
+                    # 创建空 DataFrame
+                    df_template = pd.DataFrame(0, index=row_labels, columns=col_index)
+                    df_template.index.name = "仓库 | 日期"
 
-                    # 创建 DataFrame，填充 0
-                    df_template = pd.DataFrame(0, index=row_index, columns=col_index)
-
-                    # 存储到 session_state
                     st.session_state["attendance_wide_df"] = df_template
                     st.session_state["attendance_wide_selected"] = {
                         "warehouses": selected_warehouses,
@@ -447,30 +439,30 @@ with tab_dict["📤 上传出勤数据"]:
         df_wide = st.session_state["attendance_wide_df"]
         st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
 
-        # 使用 data_editor 显示并编辑
+        # 使用 data_editor，列 MultiIndex 会自动显示为多层表头
         edited_df = st.data_editor(
             df_wide,
             use_container_width=True,
             key="attendance_wide_editor"
         )
 
-        # 保存编辑后的数据
         st.session_state["attendance_wide_df"] = edited_df
 
-        # 提交按钮和清空按钮
         col_submit, col_clear = st.columns([2, 1])
         with col_submit:
             if st.button("📤 提交数据", type="primary", use_container_width=True):
-                # 检查是否有非零数据
                 if edited_df.eq(0).all().all():
                     st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
                 else:
-                    # 解析行索引和列索引，生成记录
                     records = []
-                    # 获取所有非零单元格的行列坐标
-                    for (wh, date_str) in edited_df.index:
+                    for row_label in edited_df.index:
+                        # 解析行标签 "仓库|日期"
+                        parts = row_label.split('|')
+                        if len(parts) != 2:
+                            continue
+                        wh, date_str = parts[0], parts[1]
                         for (supplier, shift, worker) in edited_df.columns:
-                            val = edited_df.loc[(wh, date_str), (supplier, shift, worker)]
+                            val = edited_df.loc[row_label, (supplier, shift, worker)]
                             if val and val > 0:
                                 region = REGION_MAPPING.get(wh, "未知")
                                 records.append({
@@ -486,7 +478,6 @@ with tab_dict["📤 上传出勤数据"]:
                         st.warning("⚠️ 没有找到有效数据（大于0）")
                     else:
                         df_to_submit = pd.DataFrame(records)
-                        # 生成版本号（用第一个仓库和当前日期）
                         first_warehouse = records[0]["仓库名称"]
                         today = datetime.now().strftime("%Y-%m-%d")
                         version = generate_version(first_warehouse, today)
@@ -499,7 +490,7 @@ with tab_dict["📤 上传出勤数据"]:
                             if fail_count == 0:
                                 st.success(f"✅ 全部 {success_count} 条数据上传成功！版本号：{version}")
                                 st.balloons()
-                                # 重置表格为零（保留结构）
+                                # 重置表格为零
                                 st.session_state["attendance_wide_df"] = pd.DataFrame(
                                     0,
                                     index=edited_df.index,
@@ -528,15 +519,13 @@ with tab_dict["📤 上传出勤数据"]:
     if selected_warehouses:
         combos_sample = get_column_combos(selected_warehouses[:1])
         if combos_sample:
-            # 生成一个示例模板（取第一个仓库，日期取今天）
             sample_dates = [datetime.now().strftime("%Y-%m-%d")]
             sample_wh = selected_warehouses[0]
-            # 构建列 MultiIndex
             col_tuples = [(s, sh, w) for s, sh, w in combos_sample]
             col_index = pd.MultiIndex.from_tuples(col_tuples, names=["供应商", "班次", "人员类型"])
-            row_index = pd.MultiIndex.from_tuples([(sample_wh, sample_dates[0])], names=["仓库", "日期"])
-            sample_df = pd.DataFrame(0, index=row_index, columns=col_index)
-            # 转为 Excel（MultiIndex 会保留层级）
+            row_labels = [f"{sample_wh}|{sample_dates[0]}"]
+            sample_df = pd.DataFrame(0, index=row_labels, columns=col_index)
+            sample_df.index.name = "仓库 | 日期"
             output = BytesIO()
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 sample_df.to_excel(writer, sheet_name="出勤数据")
@@ -548,7 +537,6 @@ with tab_dict["📤 上传出勤数据"]:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-
 # ===================== Tab 数据总览 =====================
 with tab_dict["📊 数据总览"]:
     st.title("📊 数据总览")
