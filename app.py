@@ -106,7 +106,7 @@ TRANSLATIONS = {
 
     # ---------- 数据总览 ----------
     "overview_title": {"zh": "📊 数据总览", "pt": "📊 Visão Geral dos Dados"},
-    "overview_caption": {"zh": "仅展示每个仓库每月最新版本的数据，可通过筛选查看特定时间和站点", "pt": "Exibe apenas os dados da versão mais recente de cada armazém por mês. Filtre por período e estação."},
+    "overview_caption": {"zh": "展示每个仓库按天的最新出勤数据，可通过年月、日期范围和站点筛选", "pt": "Exibe os dados de frequência mais recentes por dia e armazém. Filtre por mês/ano, intervalo de datas e estação."},
     "overview_month": {"zh": "📅 选择年月", "pt": "📅 Selecionar Mês/Ano"},
     "overview_site": {"zh": "🏢 选择站点", "pt": "🏢 Selecionar Estação"},
     "overview_warehouses": {"zh": "🏢 仓库数", "pt": "🏢 Armazéns"},
@@ -117,6 +117,9 @@ TRANSLATIONS = {
     "overview_export": {"zh": "📥 导出数据", "pt": "📥 Exportar Dados"},
     "overview_export_csv": {"zh": "📥 导出当前数据 (CSV)", "pt": "📥 Exportar dados atuais (CSV)"},
     "overview_no_data": {"zh": "📭 暂无数据，请先上传", "pt": "📭 Sem dados, faça o upload primeiro"},
+    "overview_daily_summary": {"zh": "📊 每日汇总", "pt": "📊 Resumo Diário"},
+    "overview_daily_detail": {"zh": "📋 每日出勤明细", "pt": "📋 Detalhe Diário de Frequência"},
+    "overview_days": {"zh": "📅 天数", "pt": "📅 Dias"},
 
     # ---------- 效率看板 ----------
     "efficiency_title": {"zh": "📈 外劳人效分析看板", "pt": "📈 Painel de Eficiência de Mão de Obra"},
@@ -138,6 +141,8 @@ TRANSLATIONS = {
     "efficiency_station_summary": {"zh": "📋 各站点汇总", "pt": "📋 Resumo por Estação"},
     "efficiency_export": {"zh": "📥 导出数据", "pt": "📥 Exportar Dados"},
     "efficiency_export_csv": {"zh": "📥 导出当前汇总 (CSV)", "pt": "📥 Exportar resumo atual (CSV)"},
+    "efficiency_daily_detail": {"zh": "📋 每日效率明细", "pt": "📋 Detalhe Diário de Eficiência"},
+    "efficiency_daily_total": {"zh": "📊 每日总览", "pt": "📊 Visão Diária"},
 
     # ---------- 上传操作量 ----------
     "ops_title": {"zh": "📊 操作量数据上传", "pt": "📊 Carregar Volume de Operações"},
@@ -557,7 +562,6 @@ if "custom_tab_index" not in st.session_state:
 cols = st.columns(len(tab_labels))
 for i, label in enumerate(tab_labels):
     with cols[i]:
-        # 当前选中的按钮使用 primary 样式高亮
         btn_type = "primary" if st.session_state.custom_tab_index == i else "secondary"
         if st.button(label, type=btn_type, use_container_width=True):
             st.session_state.custom_tab_index = i
@@ -819,67 +823,84 @@ if active_tab == 0:
 elif active_tab == 1:
     st.title(_t("overview_title"))
     st.caption(_t("overview_caption"))
+
     df_raw = get_latest_attendance(user if not is_admin else None)
     if len(df_raw) == 0:
         st.info(_t("overview_no_data"))
     else:
-        df_raw["年月"] = pd.to_datetime(df_raw["日期"]).dt.strftime("%Y-%m")
+        df_raw["日期"] = pd.to_datetime(df_raw["日期"])
+        df_raw["年月"] = df_raw["日期"].dt.strftime("%Y-%m")
+
         available_months = sorted(df_raw["年月"].unique(), reverse=True)
         available_sites = sorted(df_raw["仓库名称"].unique())
-        col_f1, col_f2 = st.columns(2)
+
+        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
         with col_f1:
             selected_month = st.selectbox(_t("overview_month"), ["全部"] + available_months)
         with col_f2:
             selected_site = st.selectbox(_t("overview_site"), ["全部"] + available_sites)
+        with col_f3:
+            start_date = st.date_input(_t("attendance_start_date"), value=df_raw["日期"].min().date())
+        with col_f4:
+            end_date = st.date_input(_t("attendance_end_date"), value=df_raw["日期"].max().date())
+
         df_filtered = df_raw.copy()
         if selected_month != "全部":
             df_filtered = df_filtered[df_filtered["年月"] == selected_month]
         if selected_site != "全部":
             df_filtered = df_filtered[df_filtered["仓库名称"] == selected_site]
-        total_records = len(df_filtered)
-        total_people = int(df_filtered["人数"].sum()) if total_records > 0 else 0
-        total_warehouses = df_filtered["仓库名称"].nunique()
-        total_uploaders = df_filtered["上传人"].nunique()
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric(_t("overview_warehouses"), total_warehouses)
-        col2.metric(_t("overview_total_people"), total_people)
-        col3.metric(_t("overview_total_records"), total_records)
-        col4.metric(_t("overview_uploaders"), total_uploaders)
-        st.divider()
-        df_display = df_filtered.rename(columns={
-            "区域": _t("col_region"),
-            "仓库名称": _t("col_warehouse_name"),
-            "日期": _t("col_date"),
-            "供应商": _t("col_supplier"),
-            "班次": _t("col_shift"),
-            "长期工_日结工": _t("col_worker_type"),
-            "人数": _t("col_people")
-        })
-        if _t("col_worker_type") in df_display.columns:
-            df_display[_t("col_worker_type")] = df_display[_t("col_worker_type")].map(
-                lambda x: _t("worker_long") if x == "长期工" else (_t("worker_daily") if x == "日结工" else x)
+        df_filtered = df_filtered[(df_filtered["日期"] >= pd.to_datetime(start_date)) & (df_filtered["日期"] <= pd.to_datetime(end_date))]
+
+        if len(df_filtered) == 0:
+            st.warning(_t("efficiency_filter_no_data"))
+        else:
+            total_records = len(df_filtered)
+            total_people = int(df_filtered["人数"].sum())
+            total_warehouses = df_filtered["仓库名称"].nunique()
+            total_uploaders = df_filtered["上传人"].nunique()
+            date_range_days = (df_filtered["日期"].max() - df_filtered["日期"].min()).days + 1
+
+            col1, col2, col3, col4, col5 = st.columns(5)
+            col1.metric(_t("overview_warehouses"), total_warehouses)
+            col2.metric(_t("overview_total_people"), total_people)
+            col3.metric(_t("overview_total_records"), total_records)
+            col4.metric(_t("overview_uploaders"), total_uploaders)
+            col5.metric(_t("overview_days"), date_range_days)
+
+            st.divider()
+
+            st.subheader(_t("overview_daily_detail"))
+            df_display = df_filtered.rename(columns={
+                "区域": _t("col_region"),
+                "仓库名称": _t("col_warehouse_name"),
+                "日期": _t("col_date"),
+                "供应商": _t("col_supplier"),
+                "班次": _t("col_shift"),
+                "长期工_日结工": _t("col_worker_type"),
+                "人数": _t("col_people")
+            })
+            if _t("col_worker_type") in df_display.columns:
+                df_display[_t("col_worker_type")] = df_display[_t("col_worker_type")].map(
+                    lambda x: _t("worker_long") if x == "长期工" else (_t("worker_daily") if x == "日结工" else x)
+                )
+            st.dataframe(df_display.sort_values(_t("col_date")), use_container_width=True)
+
+            st.subheader(_t("overview_daily_summary"))
+            daily_summary = df_filtered.groupby("日期").agg({
+                "人数": "sum",
+                "仓库名称": "nunique"
+            }).reset_index()
+            daily_summary.columns = [_t("col_date"), _t("col_people"), _t("overview_warehouses")]
+            st.dataframe(daily_summary, use_container_width=True)
+
+            st.subheader(_t("overview_export"))
+            csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
+            st.download_button(
+                label=_t("overview_export_csv"),
+                data=csv,
+                file_name=f"仓库出勤汇总_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv"
             )
-        st.dataframe(df_display, use_container_width=True)
-        st.subheader(_t("overview_warehouse_summary"))
-        warehouse_summary = df_filtered.groupby("仓库名称").agg({
-            "人数": "sum",
-            "区域": "first"
-        }).reset_index()
-        warehouse_summary.columns = ["仓库名称", "总人数", "区域"]
-        warehouse_summary = warehouse_summary.rename(columns={
-            "仓库名称": _t("col_warehouse_name"),
-            "总人数": _t("col_people"),
-            "区域": _t("col_region")
-        })
-        st.dataframe(warehouse_summary, use_container_width=True)
-        st.subheader(_t("overview_export"))
-        csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
-        st.download_button(
-            label=_t("overview_export_csv"),
-            data=csv,
-            file_name=f"仓库出勤汇总_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv"
-        )
 
 # ===================== Tab 3: 外劳人效分析看板 =====================
 elif active_tab == 2:
@@ -892,6 +913,7 @@ elif active_tab == 2:
     div[data-testid="metric-container"] .stMetricDelta { font-size: 12px !important; }
     </style>
     """, unsafe_allow_html=True)
+
     try:
         merged = generate_efficiency_data()
         if len(merged) == 0:
@@ -900,10 +922,11 @@ elif active_tab == 2:
     except Exception as e:
         st.error(_t("efficiency_read_error", error=str(e)))
         st.stop()
+
     available_months = sorted(merged["年月"].unique(), reverse=True)
     month_options = ["全部"] + available_months
     st.subheader(_t("efficiency_filters"))
-    col_f1, col_f2, col_f3 = st.columns(3)
+    col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
     with col_f1:
         selected_month = st.selectbox(_t("efficiency_month"), month_options, key="eff_month")
     with col_f2:
@@ -915,6 +938,13 @@ elif active_tab == 2:
         else:
             filtered_warehouses = sorted(merged[merged["区域"] == selected_region]["仓库名称"].unique())
         selected_warehouse = st.selectbox(_t("efficiency_site"), ["全部"] + list(filtered_warehouses), key="eff_site")
+    with col_f4:
+        min_date = merged["日期"].min() if not merged.empty else datetime.now().date()
+        start_date = st.date_input(_t("attendance_start_date"), value=min_date, key="eff_start_date")
+    with col_f5:
+        max_date = merged["日期"].max() if not merged.empty else datetime.now().date()
+        end_date = st.date_input(_t("attendance_end_date"), value=max_date, key="eff_end_date")
+
     filtered_df = merged.copy()
     if selected_month != "全部":
         filtered_df = filtered_df[filtered_df["年月"] == selected_month]
@@ -922,9 +952,12 @@ elif active_tab == 2:
         filtered_df = filtered_df[filtered_df["区域"] == selected_region]
     if selected_warehouse != "全部":
         filtered_df = filtered_df[filtered_df["仓库名称"] == selected_warehouse]
+    filtered_df = filtered_df[(filtered_df["日期"] >= start_date.strftime("%Y-%m-%d")) & (filtered_df["日期"] <= end_date.strftime("%Y-%m-%d"))]
+
     if len(filtered_df) == 0:
         st.warning(_t("efficiency_filter_no_data"))
         st.stop()
+
     price_df = get_price_card_data()
     actual_days = filtered_df["日期"].nunique()
     total_volume = int(filtered_df["操作量"].sum())
@@ -932,6 +965,7 @@ elif active_tab == 2:
     avg_efficiency = filtered_df["人效"].mean() if len(filtered_df) > 0 else 0
     daily_volume = total_volume / actual_days if actual_days > 0 else 0
     daily_headcount = total_person_days / actual_days if actual_days > 0 else 0
+
     total_cost = 0.0
     for _, row in filtered_df.iterrows():
         date_obj = pd.to_datetime(row["日期"])
@@ -939,6 +973,7 @@ elif active_tab == 2:
         unit_price = calculate_cost(price_df, row["日期"], row["仓库名称"], row["班次"], row["长期工_日结工"], is_sunday_or_holiday, row["供应商"])
         total_cost += unit_price * row["人数"]
     unit_cost = total_cost / total_person_days if total_person_days > 0 else 0
+
     st.subheader(_t("efficiency_core_metrics"))
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric(_t("efficiency_metric_efficiency"), f"{avg_efficiency:.0f}")
@@ -947,6 +982,7 @@ elif active_tab == 2:
     c4.metric(_t("efficiency_metric_total_person_days"), f"{total_person_days:,.0f}")
     c5.metric(_t("efficiency_metric_unit_cost"), f"R${unit_cost:.2f}")
     st.caption(_t("efficiency_metric_unit"))
+
     st.subheader(_t("efficiency_station_summary"))
     stations = filtered_df["仓库名称"].unique()
     summary_rows = []
@@ -977,6 +1013,26 @@ elif active_tab == 2:
         })
     result_df = pd.DataFrame(summary_rows)
     st.dataframe(result_df, use_container_width=True)
+
+    # 每日明细
+    st.subheader(_t("efficiency_daily_detail"))
+    daily_detail = filtered_df.groupby(["日期", "仓库名称"]).agg({
+        "人数": "sum",
+        "操作量": "sum",
+        "人效": "mean"
+    }).reset_index()
+    daily_detail.columns = [_t("col_date"), _t("col_station"), _t("col_people"), _t("col_volume"), _t("col_efficiency")]
+    daily_detail = daily_detail.sort_values([_t("col_date"), _t("col_station")])
+    st.dataframe(daily_detail, use_container_width=True)
+
+    st.subheader(_t("efficiency_daily_total"))
+    daily_total = daily_detail.groupby(_t("col_date")).agg({
+        _t("col_people"): "sum",
+        _t("col_volume"): "sum",
+        _t("col_efficiency"): "mean"
+    }).reset_index()
+    st.dataframe(daily_total, use_container_width=True)
+
     st.subheader(_t("efficiency_export"))
     csv = result_df.to_csv(index=False).encode("utf-8-sig")
     st.download_button(
