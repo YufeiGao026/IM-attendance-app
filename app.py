@@ -474,12 +474,9 @@ with tab_dict["📤 上传出勤数据"]:
                     st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
                 else:
                     records = []
-                    # 遍历行索引，但使用原始仓库和日期重新构建，忽略前两列的值
-                    # 行数 = len(original_warehouses) * len(original_dates)
                     row_idx = 0
                     for wh in original_warehouses:
                         for d in original_dates:
-                            # 从 edited_df 中提取该行的数值列
                             row_data = edited_df.iloc[row_idx]
                             for (supplier, shift, worker) in numeric_cols:
                                 val = row_data[(supplier, shift, worker)]
@@ -544,18 +541,18 @@ with tab_dict["📤 上传出勤数据"]:
     else:
         st.info("👆 请选择日期范围、仓库，并点击“生成表格”")
 
-    # ------------------ 模板下载（与表格结构完全一致） ------------------
+    # ------------------ 模板下载（扁平化列名） ------------------
     st.divider()
-    st.caption("💡 下载 Excel 模板，与上方表格格式完全相同，可在本地填写后复制粘贴到表格中")
+    st.caption("💡 下载 Excel 模板，列名与线上表格一致（层级合并为“供应商_班次_人员类型”），可在本地填写后复制粘贴到表格中。")
     if selected_warehouses:
         combos_sample = get_column_combos(selected_warehouses)
         if combos_sample:
             sample_wh = selected_warehouses[0]
             sample_dates = [datetime.now().strftime("%Y-%m-%d")]
-            col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(s, sh, w) for s, sh, w in combos_sample]
-            col_index = pd.MultiIndex.from_tuples(col_tuples)
+            # 扁平列名
+            flat_cols = ["仓库", "日期"] + [f"{s}_{sh}_{w}" for s, sh, w in combos_sample]
             row_data = [sample_wh, sample_dates[0]] + [0] * len(combos_sample)
-            sample_df = pd.DataFrame([row_data], columns=col_index)
+            sample_df = pd.DataFrame([row_data], columns=flat_cols)
             output = BytesIO()
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 sample_df.to_excel(writer, sheet_name="出勤数据", index=False)
@@ -567,7 +564,6 @@ with tab_dict["📤 上传出勤数据"]:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-
 
 # ===================== Tab 外劳人效分析看板 =====================
 with tab_dict["📈 外劳人效分析看板"]:
