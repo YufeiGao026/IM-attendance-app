@@ -356,77 +356,116 @@ with tab_dict["📤 上传出勤数据"]:
     st.title("📤 上传出勤数据")
     st.markdown("""
     ---
-    ### 📋 使用说明
-    1. 点击下方 **"下载模板"** 按钮，下载 Excel 模板
-    2. 按模板格式填写数据（**列名必须与模板完全一致**）
-    3. 填写完成后，点击 **"选择文件"** 上传
-    4. 系统将自动生成版本号（格式：YYYYMMDDV序号），并记录上传人和上传时间
-    5. **每个仓库每月仅保留最新版本的数据**
+    ### 📋 操作说明
+    1. 选择下方的 **日期、仓库、供应商、班次、人员类型**。
+    2. 输入该组合的 **出勤人数**。
+    3. 点击 **“添加一行”** 按钮，将数据加入待提交列表。
+    4. 可重复添加多行，最后点击 **“提交所有数据”** 一次性上传。
+    5. 系统将自动生成版本号，并记录上传人和时间。
     ---
     """)
-    st.subheader("📋 下载模板")
-    template_df = pd.DataFrame({
-        "区域": ["东南区"],
-        "仓库名称": ["CDC SP"],
-        "日期": ["2026-06-01"],
-        "供应商": ["Enfok"],
-        "班次": ["T1"],
-        "长期工_日结工": ["长期工"],
-        "人数": [10]
-    })
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        template_df.to_excel(writer, index=False, sheet_name="出勤数据")
-    template_bytes = output.getvalue()
-    col_download, _ = st.columns([1, 3])
-    with col_download:
-        st.download_button(
-            label="📥 下载出勤模板 (Excel)",
-            data=template_bytes,
-            file_name="仓库出勤模板.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
-    st.caption("列名：区域、仓库名称、日期、供应商、班次、长期工_日结工、人数")
+
+    # 预先定义可选值（可根据实际调整）
+    REGIONS = ["东南区", "南区", "北区", "FM"]  # 根据您的数据修改
+    WAREHOUSES = {
+        "东南区": ["CDC SP", "CDC RJ", "CDC MG", "PA GUA", "GLP Guarulhos"],
+        "南区": ["Drop BRA"],
+        "北区": [],
+        "FM": ["TP BAR", "TP IMN", "TP IMG"]
+    }
+    SUPPLIERS = ["Enfok", "BLITZ", "T2", "T3"]  # 根据实际供应商调整
+    SHIFTS = ["T1", "T2", "T3"]
+    WORKER_TYPES = ["长期工", "日结工"]
+
+    # 初始化 session_state 存储待提交的数据
+    if "attendance_rows" not in st.session_state:
+        st.session_state.attendance_rows = []
+
+    # 表单输入区域
+    with st.form("add_row_form"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            date_input = st.date_input("📅 日期", value=datetime.now().date())
+        with col2:
+            region_input = st.selectbox("🏢 区域", REGIONS)
+        with col3:
+            # 根据区域动态显示仓库
+            available_warehouses = WAREHOUSES.get(region_input, [])
+            if not available_warehouses:
+                st.warning("该区域暂无仓库，请选择其他区域")
+            warehouse_input = st.selectbox("🏭 仓库", available_warehouses if available_warehouses else ["请先选择区域"])
+
+        col4, col5, col6 = st.columns(3)
+        with col4:
+            supplier_input = st.selectbox("🏷️ 供应商", SUPPLIERS)
+        with col5:
+            shift_input = st.selectbox("🕒 班次", SHIFTS)
+        with col6:
+            worker_type_input = st.selectbox("👷 人员类型", WORKER_TYPES)
+
+        # 人数输入
+        people_input = st.number_input("👥 出勤人数", min_value=0, step=1, value=1)
+
+        # 提交当前行
+        submitted = st.form_submit_button("➕ 添加一行")
+        if submitted:
+            if warehouse_input == "请先选择区域":
+                st.error("❌ 请先选择有效的区域和仓库")
+            elif people_input < 0:
+                st.error("❌ 人数不能为负数")
+            else:
+                new_row = {
+                    "区域": region_input,
+                    "仓库名称": warehouse_input,
+                    "日期": date_input.strftime("%Y-%m-%d"),
+                    "供应商": supplier_input,
+                    "班次": shift_input,
+                    "长期工_日结工": worker_type_input,
+                    "人数": int(people_input)
+                }
+                st.session_state.attendance_rows.append(new_row)
+                st.success(f"✅ 已添加：{warehouse_input} | {supplier_input} | {shift_input} | {worker_type_input} | 人数 {int(people_input)}")
+
+    # 显示当前待提交列表
     st.divider()
-    st.subheader("📂 上传文件")
-    uploaded_file = st.file_uploader("选择 Excel 或 CSV 文件", type=["xlsx", "xls", "csv"], key="attendance_uploader")
-    if uploaded_file:
-        try:
-            df = pd.read_excel(uploaded_file) if not uploaded_file.name.endswith(".csv") else pd.read_csv(uploaded_file)
-            # 校验
-            errors = validate_attendance_data(df)
-            if errors:
-                for err in errors:
-                    st.error(f"❌ {err}")
-                st.stop()
-            df["日期"] = pd.to_datetime(df["日期"]).dt.strftime("%Y-%m-%d")
-            df["人数"] = pd.to_numeric(df["人数"])
-            st.success(f"✅ 校验通过！共 {len(df)} 行数据待上传")
-            st.dataframe(df.head(10), use_container_width=True)
-            if st.button("✅ 确认上传", use_container_width=True):
-                with st.status("⏳ 正在上传数据...", expanded=True) as status:
+    st.subheader("📋 待提交数据列表")
+    if st.session_state.attendance_rows:
+        df_preview = pd.DataFrame(st.session_state.attendance_rows)
+        st.dataframe(df_preview, use_container_width=True)
+
+        col_clear, col_submit = st.columns(2)
+        with col_clear:
+            if st.button("🗑️ 清空列表", use_container_width=True):
+                st.session_state.attendance_rows = []
+                st.rerun()
+        with col_submit:
+            if st.button("📤 提交所有数据", use_container_width=True, type="primary"):
+                if not st.session_state.attendance_rows:
+                    st.warning("⚠️ 列表为空，请添加数据后再提交")
+                else:
+                    # 构造 DataFrame
+                    df_to_submit = pd.DataFrame(st.session_state.attendance_rows)
+                    # 生成版本号（使用第一条记录的仓库和当前日期）
                     today = datetime.now().strftime("%Y-%m-%d")
-                    first_warehouse = df["仓库名称"].iloc[0]
+                    first_warehouse = df_to_submit["仓库名称"].iloc[0]
                     version = generate_version(first_warehouse, today)
-                    df["上传人"] = user
-                    df["上传时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    df["版本号"] = version
-                    success_count, fail_count = save_attendance_to_db(df)
+                    df_to_submit["上传人"] = user
+                    df_to_submit["上传时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    df_to_submit["版本号"] = version
+
+                    # 保存到数据库
+                    success_count, fail_count = save_attendance_to_db(df_to_submit)
                     if fail_count == 0:
-                        status.update(label=f"✅ 上传完成！成功 {success_count} 条，版本号：{version}", state="complete")
+                        st.success(f"✅ 全部 {success_count} 条数据上传成功！版本号：{version}")
+                        st.balloons()
+                        st.session_state.attendance_rows = []  # 清空列表
+                        st.rerun()
                     else:
-                        status.update(label=f"⚠️ 上传完成！成功 {success_count} 条，失败 {fail_count} 条，版本号：{version}", state="error")
-                    st.write(f"📌 版本号：**{version}**")
-                    st.write(f"👤 上传人：**{user}**")
-                    st.write(f"📅 上传时间：**{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}**")
-                    st.write(f"📊 总行数：{len(df)}")
-                    if fail_count == 0:
-                        st.success("🎉 所有数据已成功上传！")
-                    else:
-                        st.error(f"❌ 有 {fail_count} 行上传失败，请检查数据后重试")
-        except Exception as e:
-            st.error(f"❌ 读取文件失败：{e}")
+                        st.error(f"❌ 上传失败 {fail_count} 条，请检查数据后重试")
+    else:
+        st.info("📭 暂无数据，请添加后提交")
+
+    # 可选：快速清空所有数据（仅当需要时）
 
 # ===================== Tab 数据总览 =====================
 with tab_dict["📊 数据总览"]:
