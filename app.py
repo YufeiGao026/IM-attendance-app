@@ -358,7 +358,7 @@ with tab_dict["📤 上传出勤数据"]:
     ### 操作说明
     1. 选择 **日期范围** 和 **一个或多个仓库**。
     2. 点击 **"生成表格"**，系统会生成一个可编辑表格：
-       - 前两列为 **仓库** 和 **日期**（固定宽度）。
+       - 前两列为 **仓库** 和 **日期**。
        - 其余列为 **供应商 → 班次 → 人员类型** 的三级表头。
     3. 在对应格子中填写出勤人数。
     4. 填写完毕后，点击 **"提交数据"**。
@@ -422,7 +422,7 @@ with tab_dict["📤 上传出勤数据"]:
                 if not combos:
                     st.warning("⚠️ 所选仓库在价卡表中无配置，请先上传价卡")
                 else:
-                    # 构建列 MultiIndex（前两列也设为三层，避免后续导出混合类型问题）
+                    # 构建列 MultiIndex（前两列也设为三层，保持结构一致）
                     col_tuples = [('仓库', '仓库', '仓库'), ('日期', '日期', '日期')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
                     col_index = pd.MultiIndex.from_tuples(col_tuples)
 
@@ -447,14 +447,9 @@ with tab_dict["📤 上传出勤数据"]:
         df_wide = st.session_state["attendance_wide_df"]
         st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
 
-        # 配置前两列宽度
-        column_config = {
-            ('仓库', '仓库', '仓库'): st.column_config.TextColumn("仓库", width=150),
-            ('日期', '日期', '日期'): st.column_config.TextColumn("日期", width=120),
-        }
+        # 移除 column_config，避免 JSON 序列化错误
         edited_df = st.data_editor(
             df_wide,
-            column_config=column_config,
             use_container_width=True,
             key="attendance_wide_editor",
             num_rows="fixed"
@@ -563,7 +558,6 @@ with tab_dict["📤 上传出勤数据"]:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-
 # ===================== Tab 外劳人效分析看板 =====================
 with tab_dict["📈 外劳人效分析看板"]:
     st.title("📈 外劳人效分析看板")
