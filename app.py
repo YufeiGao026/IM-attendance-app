@@ -64,28 +64,18 @@ TRANSLATIONS = {
         "zh": "登录用户: {user} | 角色: {role} | 数据模式: 云端 TiDB",
         "pt": "Usuário: {user} | Função: {role} | Modo de dados: TiDB Cloud"
     },
+    # 新增表格列标题翻译
+    "warehouse": {
+        "zh": "仓库",
+        "pt": "Armazém"
+    },
+    "date": {
+        "zh": "日期",
+        "pt": "Data"
+    },
 
-    # ---------- Tab 名称 ----------
-    "tab_upload_attendance": {
-        "zh": "📤 上传出勤数据",
-        "pt": "📤 Carregar Frequência"
-    },
-    "tab_overview": {
-        "zh": "📊 数据总览",
-        "pt": "📊 Visão Geral"
-    },
-    "tab_efficiency": {
-        "zh": "📈 外劳人效分析看板",
-        "pt": "📈 Painel de Eficiência"
-    },
-    "tab_upload_ops": {
-        "zh": "📊 上传操作量",
-        "pt": "📊 Carregar Volume"
-    },
-    "tab_price_card": {
-        "zh": "💰 价卡配置",
-        "pt": "💰 Tabela de Preços"
-    },
+    # ---------- Tab 名称（固定，不翻译） ----------
+    # 但内部标题仍用翻译
 
     # ---------- 上传出勤数据 Tab ----------
     "attendance_title": {
@@ -963,13 +953,20 @@ with st.sidebar:
         st.rerun()
 
 # ========== 主界面 ==========
-# 翻译后的 Tab 名称
-tab_names = [_t("tab_upload_attendance"), _t("tab_overview"), _t("tab_efficiency"), _t("tab_upload_ops"), _t("tab_price_card")]
-tabs = st.tabs(tab_names)
-tab_dict = {_t("tab_upload_attendance"): tabs[0], _t("tab_overview"): tabs[1], _t("tab_efficiency"): tabs[2], _t("tab_upload_ops"): tabs[3], _t("tab_price_card"): tabs[4]}
+# 固定 Tab 名称（不翻译，保证 st.tabs 稳定性，避免切换时重置）
+tab_names_fixed = ["📤 上传出勤数据", "📊 数据总览", "📈 外劳人效分析看板", "📊 上传操作量", "💰 价卡配置"]
+tabs = st.tabs(tab_names_fixed)
+# 构建 tab_dict，键使用固定中文名称
+tab_dict = {
+    "📤 上传出勤数据": tabs[0],
+    "📊 数据总览": tabs[1],
+    "📈 外劳人效分析看板": tabs[2],
+    "📊 上传操作量": tabs[3],
+    "💰 价卡配置": tabs[4]
+}
 
 # ===================== Tab 上传出勤数据 =====================
-with tab_dict[_t("tab_upload_attendance")]:
+with tab_dict["📤 上传出勤数据"]:
     st.title(_t("attendance_title"))
     st.markdown(_t("attendance_instructions"))
 
@@ -1049,8 +1046,10 @@ with tab_dict[_t("tab_upload_attendance")]:
                 if not combos:
                     st.warning(_t("attendance_no_price_config"))
                 else:
-                    # 构建列 MultiIndex（前两列也设为三层，保持结构一致）
-                    col_tuples = [('仓库', '仓库', '仓库'), ('日期', '日期', '日期')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
+                    # 构建列 MultiIndex，前两列使用翻译后的标签
+                    wh_label = _t("warehouse")
+                    date_label = _t("date")
+                    col_tuples = [(wh_label, wh_label, wh_label), (date_label, date_label, date_label)] + [(supplier, shift, worker) for supplier, shift, worker in combos]
                     col_index = pd.MultiIndex.from_tuples(col_tuples)
 
                     rows = []
@@ -1202,11 +1201,13 @@ with tab_dict[_t("tab_upload_attendance")]:
                 else:
                     ws.column_dimensions[get_column_letter(i)].width = 12
 
-            # 写入三层表头
+            # 写入三层表头，使用翻译后的标签
+            wh_label = _t("warehouse")
+            date_label = _t("date")
             ws.merge_cells(start_row=1, start_column=1, end_row=3, end_column=1)
-            ws.cell(row=1, column=1, value="仓库")
+            ws.cell(row=1, column=1, value=wh_label)
             ws.merge_cells(start_row=1, start_column=2, end_row=3, end_column=2)
-            ws.cell(row=1, column=2, value="日期")
+            ws.cell(row=1, column=2, value=date_label)
 
             col_idx = 3
             for supplier in suppliers:
@@ -1258,7 +1259,7 @@ with tab_dict[_t("tab_upload_attendance")]:
             )
 
 # ===================== Tab 数据总览 =====================
-with tab_dict[_t("tab_overview")]:
+with tab_dict["📊 数据总览"]:
     st.title(_t("overview_title"))
     st.caption(_t("overview_caption"))
     
@@ -1272,9 +1273,9 @@ with tab_dict[_t("tab_overview")]:
         
         col_f1, col_f2 = st.columns(2)
         with col_f1:
-            selected_month = st.selectbox(_t("overview_month"), ["全部"] + available_months, key="overview_month")
+            selected_month = st.selectbox(_t("overview_month"), ["全部"] + available_months)
         with col_f2:
-            selected_site = st.selectbox(_t("overview_site"), ["全部"] + available_sites, key="overview_site")
+            selected_site = st.selectbox(_t("overview_site"), ["全部"] + available_sites)
         
         df_filtered = df_raw.copy()
         if selected_month != "全部":
@@ -1314,7 +1315,7 @@ with tab_dict[_t("tab_overview")]:
         )
 
 # ===================== Tab 外劳人效分析看板 =====================
-with tab_dict[_t("tab_efficiency")]:
+with tab_dict["📈 外劳人效分析看板"]:
     st.title(_t("efficiency_title"))
     st.caption(_t("efficiency_caption"))
     
@@ -1479,7 +1480,7 @@ with tab_dict[_t("tab_efficiency")]:
     )
 
 # ===================== Tab 上传操作量 =====================
-with tab_dict[_t("tab_upload_ops")]:
+with tab_dict["📊 上传操作量"]:
     st.title(_t("ops_title"))
     st.markdown(_t("ops_instructions"))
     st.subheader("📋 " + _t("ops_download_template_btn").replace("📥 ", ""))
@@ -1592,7 +1593,7 @@ with tab_dict[_t("tab_upload_ops")]:
         st.warning(_t("ops_read_data_error", error=str(e)))
 
 # ===================== Tab 价卡配置 =====================
-with tab_dict[_t("tab_price_card")]:
+with tab_dict["💰 价卡配置"]:
     st.title(_t("price_title"))
     if not is_admin:
         st.warning(_t("price_admin_only"))
