@@ -353,6 +353,198 @@ tab_dict = {name: tabs[i] for i, name in enumerate(tab_names)}
 
 # ===================== Tab 上传出勤数据 =====================
 
+with tab_dict["📤 上传出勤数据"]:
+    st.title("📤 上传出勤数据")
+    st.markdown("""
+    ### 操作说明
+    1. 选择 **日期范围** 和 **一个或多个仓库**。
+    2. 点击 **"生成表格"**，系统会生成与模板格式一致的表格：
+       - 前两列为 **仓库** 和 **日期**（可编辑，但建议不要修改）。
+       - 其余列为 **供应商 → 班次 → 人员类型** 的三级表头。
+    3. 在对应格子中填写出勤人数。
+    4. 填写完毕后，点击 **"提交数据"**。
+    """)
+
+    # ------------------ 加载仓库列表 ------------------
+    try:
+        df_existing = get_latest_attendance(user if not is_admin else None)
+        all_warehouses = sorted(df_existing["仓库名称"].unique()) if not df_existing.empty else []
+    except:
+        all_warehouses = []
+
+    if not all_warehouses:
+        all_warehouses = ["CDC SP", "CDC RJ", "CDC MG", "TP BAR", "TP IMN", "TP IMG", "PA GUA", "Drop BRA", "GLP Guarulhos"]
+
+    REGION_MAPPING = {
+        "CDC SP": "东南区", "CDC RJ": "南区", "CDC MG": "北区",
+        "TP BAR": "FM", "TP IMN": "FM", "TP IMG": "FM",
+        "PA GUA": "东南区", "Drop BRA": "南区", "GLP Guarulhos": "东南区",
+    }
+
+    # ------------------ 供应商和人员类型排序规则 ------------------
+    SUPPLIER_ORDER = ["D0", "Blitz", "Enfok", "Brevi", "Mission", "Polly", "GNX"]
+    WORKER_ORDER = ["长期工", "日结工"]  # 长期工在前
+
+    # ------------------ 筛选条件 ------------------
+    col1, col2, col3 = st.columns([2, 2, 3])
+    with col1:
+        start_date = st.date_input("📅 开始日期", value=datetime.now().replace(day=1))
+    with col2:
+        end_date = st.date_input("📅 结束日期", value=datetime.now())
+    with col3:
+        selected_warehouses = st.multiselect("🏭 选择仓库（可多选）", all_warehouses, default=all_warehouses[:1] if all_warehouses else [])
+
+    # ------------------ 获取列组合（按指定顺序） ------------------
+    @st.cache_data(ttl=600)
+    def get_column_combos(warehouses):
+        """从价卡表中提取 (供应商, 班次, 人员类型)，并按供应商、人员类型排序"""
+        price_df = get_price_card_data()
+        if price_df.empty:
+            return []
+        filtered = price_df[price_df["仓库名称"].isin(warehouses)]
+        if filtered.empty:
+            return []
+        combos = filtered[["供应商", "班次", "长期工_日结工"]].drop_duplicates().values.tolist()
+        supplier_order_dict = {s: i for i, s in enumerate(SUPPLIER_ORDER)}
+        worker_order_dict = {w: i for i, w in enumerate(WORKER_ORDER)}
+        combos.sort(key=lambda x: (supplier_order_dict.get(x[0], 999), x[1], worker_order_dict.get(x[2], 999)))
+        return combos
+
+    # ------------------ 生成表格按钮 ------------------
+    if st.button("📋 生成表格", use_container_width=True):
+        if not selected_warehouses:
+            st.warning("⚠️ 请至少选择一个仓库")
+        else:
+            dates = pd.date_range(start=start_date, end=end_date, freq='D').strftime("%Y-%m-%d").tolist()
+            if not dates:
+                st.warning("⚠️ 日期范围无效")
+            else:
+                combos = get_column_combos(selected_warehouses)
+                if not combos:
+                    st.warning("⚠️ 所选仓库在价卡表中无配置，请先上传价卡")
+                else:
+                    # 构建列 MultiIndex：前两列为 '仓库' 和 '日期'，其余为 (供应商, 班次, 人员类型)
+                    col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
+                    col_index = pd.MultiIndex.from_tuples(col_tuples)
+
+                    # 生成行数据：每个仓库每天一行
+                    rows = []
+                    for wh in selected_warehouses:
+                        for d in dates:
+                            row_data = [wh, d] + [0] * len(combos)
+                            rows.append(row_data)
+
+                    df_template = pd.DataFrame(rows, columns=col_index)
+
+                    # 存储到 session_state
+                    st.session_state["attendance_wide_df"] = df_template
+                    st.session_state["attendance_wide_selected"] = {
+                        "warehouses": selected_warehouses,
+                        "dates": dates,
+                        "combos": combos,
+                    }
+                    st.rerun()
+
+    # ------------------ 显示可编辑表格 ------------------
+    if "attendance_wide_df" in st.session_state:
+        df_wide = st.session_state["attendance_wide_df"]
+        st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
+
+        # 配置前两列固定（sticky），防止滚动时丢失标识
+        column_config = {
+            ('仓库', '', ''): st.column_config.TextColumn("仓库", width=150, sticky="left"),
+            ('日期', '', ''): st.column_config.TextColumn("日期", width=120, sticky="left"),
+        }
+        # 仅配置前两列，其他列使用默认设置
+        edited_df = st.data_editor(
+            df_wide,
+            column_config=column_config,
+            use_container_width=True,
+            key="attendance_wide_editor",
+            num_rows="fixed"
+        )
+
+        st.session_state["attendance_wide_df"] = edited_df
+
+        col_submit, col_clear = st.columns([2, 1])
+        with col_submit:
+            if st.button("📤 提交数据", type="primary", use_container_width=True):
+                original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
+                original_dates = st.session_state["attendance_wide_selected"]["dates"]
+                combos = st.session_state["attendance_wide_selected"]["combos"]
+
+                numeric_cols = edited_df.columns[2:]
+                if edited_df[numeric_cols].eq(0).all().all():
+                    st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
+                else:
+                    records = []
+                    row_idx = 0
+                    for wh in original_warehouses:
+                        for d in original_dates:
+                            row_data = edited_df.iloc[row_idx]
+                            for (supplier, shift, worker) in numeric_cols:
+                                val = row_data[(supplier, shift, worker)]
+                                if val and val > 0:
+                                    region = REGION_MAPPING.get(wh, "未知")
+                                    records.append({
+                                        "区域": region,
+                                        "仓库名称": wh,
+                                        "日期": d,
+                                        "供应商": supplier,
+                                        "班次": shift,
+                                        "长期工_日结工": worker,
+                                        "人数": int(val)
+                                    })
+                            row_idx += 1
+
+                    if not records:
+                        st.warning("⚠️ 没有找到有效数据（大于0）")
+                    else:
+                        df_to_submit = pd.DataFrame(records)
+                        first_warehouse = records[0]["仓库名称"]
+                        today = datetime.now().strftime("%Y-%m-%d")
+                        version = generate_version(first_warehouse, today)
+                        df_to_submit["上传人"] = user
+                        df_to_submit["上传时间"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        df_to_submit["版本号"] = version
+
+                        try:
+                            success_count, fail_count = save_attendance_to_db(df_to_submit)
+                            if fail_count == 0:
+                                st.success(f"✅ 全部 {success_count} 条数据上传成功！版本号：{version}")
+                                st.balloons()
+                                # 重置表格为零
+                                zero_rows = []
+                                for wh in original_warehouses:
+                                    for d in original_dates:
+                                        zero_rows.append([wh, d] + [0] * len(combos))
+                                st.session_state["attendance_wide_df"] = pd.DataFrame(
+                                    zero_rows,
+                                    columns=edited_df.columns
+                                )
+                            else:
+                                st.error(f"❌ 上传失败 {fail_count} 条，请检查数据后重试")
+                        except Exception as e:
+                            st.error(f"❌ 上传出错：{e}")
+
+        with col_clear:
+            if st.button("🗑️ 清空表格", use_container_width=True):
+                if "attendance_wide_df" in st.session_state:
+                    original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
+                    original_dates = st.session_state["attendance_wide_selected"]["dates"]
+                    combos = st.session_state["attendance_wide_selected"]["combos"]
+                    zero_rows = []
+                    for wh in original_warehouses:
+                        for d in original_dates:
+                            zero_rows.append([wh, d] + [0] * len(combos))
+                    st.session_state["attendance_wide_df"] = pd.DataFrame(
+                        zero_rows,
+                        columns=st.session_state["attendance_wide_df"].columns
+                    )
+
+    else:
+        st.info("👆 请选择日期范围、仓库，并点击“生成表格”")
+
     # ------------------ 模板下载（三层表头，无序号列） ------------------
     st.divider()
     st.caption("💡 下载 Excel 模板，表头为三层（供应商 → 班次 → 人员类型），无序号列，填写后复制粘贴到线上表格。")
