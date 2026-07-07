@@ -541,21 +541,24 @@ with tab_dict["📤 上传出勤数据"]:
     else:
         st.info("👆 请选择日期范围、仓库，并点击“生成表格”")
 
-    # ------------------ 模板下载（扁平化列名） ------------------
+    # ------------------ 模板下载（三层表头，包含序号列） ------------------
     st.divider()
-    st.caption("💡 下载 Excel 模板，列名与线上表格一致（层级合并为“供应商_班次_人员类型”），可在本地填写后复制粘贴到表格中。")
+    st.caption("💡 下载 Excel 模板，表头为三层（供应商 → 班次 → 人员类型），包含一列序号（可忽略），填写后复制粘贴到线上表格。")
     if selected_warehouses:
         combos_sample = get_column_combos(selected_warehouses)
         if combos_sample:
             sample_wh = selected_warehouses[0]
             sample_dates = [datetime.now().strftime("%Y-%m-%d")]
-            # 扁平列名
-            flat_cols = ["仓库", "日期"] + [f"{s}_{sh}_{w}" for s, sh, w in combos_sample]
+            # 构建 MultiIndex 列（与线上表格一致）
+            col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(s, sh, w) for s, sh, w in combos_sample]
+            col_index = pd.MultiIndex.from_tuples(col_tuples)
+            # 一行示例数据
             row_data = [sample_wh, sample_dates[0]] + [0] * len(combos_sample)
-            sample_df = pd.DataFrame([row_data], columns=flat_cols)
+            sample_df = pd.DataFrame([row_data], columns=col_index)
             output = BytesIO()
-            with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                sample_df.to_excel(writer, sheet_name="出勤数据", index=False)
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                # 导出时保留行索引（显示为序号列），列索引为三层表头
+                sample_df.to_excel(writer, sheet_name="出勤数据", index=True, index_label=None)
             template_bytes = output.getvalue()
             st.download_button(
                 label="📥 下载模板 (Excel)",
@@ -564,6 +567,7 @@ with tab_dict["📤 上传出勤数据"]:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
+  
 
 # ===================== Tab 外劳人效分析看板 =====================
 with tab_dict["📈 外劳人效分析看板"]:
