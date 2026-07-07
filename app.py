@@ -364,21 +364,35 @@ with tab_dict["📤 上传出勤数据"]:
     4. 填写完毕后，点击 **"提交数据"**。
     """)
 
-    # ------------------ 加载仓库列表 ------------------
-    try:
-        df_existing = get_latest_attendance(user if not is_admin else None)
-        all_warehouses = sorted(df_existing["仓库名称"].unique()) if not df_existing.empty else []
-    except:
-        all_warehouses = []
-
-    if not all_warehouses:
-        all_warehouses = ["CDC SP", "CDC RJ", "CDC MG", "TP BAR", "TP IMN", "TP IMG", "PA GUA", "Drop BRA", "GLP Guarulhos"]
-
-    REGION_MAPPING = {
-        "CDC SP": "东南区", "CDC RJ": "南区", "CDC MG": "北区",
-        "TP BAR": "FM", "TP IMN": "FM", "TP IMG": "FM",
-        "PA GUA": "东南区", "Drop BRA": "南区", "GLP Guarulhos": "东南区",
+    # ------------------ 区域和仓库清单（按用户提供） ------------------
+    REGION_WAREHOUSE_MAPPING = {
+        "Middle West": ["DC-DF2", "DC-MT2", "RDC-GO2", "RDC-TO1"],
+        "North": ["DC-PA4"],
+        "North East": ["DC-BA3", "DC-PE2", "DC-PI2", "RDC-BA1"],
+        "South East": ["RDC-MG1", "RDC-RJ1", "DC-ES2", "DS BHZI"],
+        "SP": [
+            "CDC-SP", "PA GUA", "RDC-SP1", "RDC-SP2", "RDC-SP4",
+            "CDC-GU", "Drop BRA", "GLP Guarulhos", "PA MELI", "TP BAR",
+            "PA SAT", "PA NVS", "TP IMN", "DS TAMI", "DS BUXI",
+            "DS GRUI", "TP IMG"
+        ],
+        "South": ["RDC-RS2", "RDC-PR1", "DS JMSA", "RDC-SC1"],
     }
+
+    # 构建所有仓库的扁平列表（按区域顺序）
+    ALL_WAREHOUSES = []
+    for region, warehouses in REGION_WAREHOUSE_MAPPING.items():
+        for wh in warehouses:
+            ALL_WAREHOUSES.append(wh)
+
+    # 区域映射（仓库 → 区域）
+    REGION_MAPPING = {}
+    for region, warehouses in REGION_WAREHOUSE_MAPPING.items():
+        for wh in warehouses:
+            REGION_MAPPING[wh] = region
+
+    # 区域列表（用于下拉选项）
+    REGIONS = list(REGION_WAREHOUSE_MAPPING.keys())
 
     # ------------------ 供应商和人员类型排序规则 ------------------
     SUPPLIER_ORDER = ["D0", "Blitz", "Enfok", "Brevi", "Mission", "Polly", "GNX"]
@@ -391,9 +405,13 @@ with tab_dict["📤 上传出勤数据"]:
     with col2:
         end_date = st.date_input("📅 结束日期", value=datetime.now())
     with col3:
-        selected_warehouses = st.multiselect("🏭 选择仓库（可多选）", all_warehouses, default=all_warehouses[:1] if all_warehouses else [])
+        selected_warehouses = st.multiselect(
+            "🏭 选择仓库（可多选）",
+            ALL_WAREHOUSES,
+            default=ALL_WAREHOUSES[:1] if ALL_WAREHOUSES else []
+        )
 
-    # ------------------ 获取列组合（按指定顺序） ------------------
+    # ------------------ 获取列组合（从价卡表） ------------------
     @st.cache_data(ttl=600)
     def get_column_combos(warehouses):
         """从价卡表中提取 (供应商, 班次, 人员类型)，并按供应商、人员类型排序"""
@@ -464,7 +482,6 @@ with tab_dict["📤 上传出勤数据"]:
                 original_dates = st.session_state["attendance_wide_selected"]["dates"]
                 combos = st.session_state["attendance_wide_selected"]["combos"]
 
-                # 获取数值列（跳过前两列）
                 numeric_cols = edited_df.columns[2:]
 
                 if edited_df[numeric_cols].eq(0).all().all():
@@ -475,13 +492,10 @@ with tab_dict["📤 上传出勤数据"]:
                     for wh in original_warehouses:
                         for d in original_dates:
                             row_data = edited_df.iloc[row_idx]
-                            # 遍历数值列，安全解包
                             for col_tuple in numeric_cols:
-                                # 确保是三元组
                                 if len(col_tuple) == 3:
                                     supplier, shift, worker = col_tuple
                                 else:
-                                    # 如果列结构异常，跳过
                                     continue
                                 val = row_data[col_tuple]
                                 if val and val > 0:
@@ -551,7 +565,6 @@ with tab_dict["📤 上传出勤数据"]:
     if selected_warehouses:
         combos_sample = get_column_combos(selected_warehouses)
         if combos_sample:
-            # 准备数据
             sample_wh = selected_warehouses[0]
             sample_date = datetime.now().strftime("%Y-%m-%d")
             from collections import defaultdict
@@ -574,7 +587,6 @@ with tab_dict["📤 上传出勤数据"]:
             ws = wb.active
             ws.title = "出勤数据"
 
-            # 列宽
             for i in range(1, total_cols+1):
                 if i <= 2:
                     ws.column_dimensions[get_column_letter(i)].width = 15
@@ -606,14 +618,12 @@ with tab_dict["📤 上传出勤数据"]:
                         ws.cell(row=3, column=col_idx, value=worker)
                         col_idx += 1
 
-            # 样式
             for row in range(1, 4):
                 for col in range(1, total_cols+1):
                     cell = ws.cell(row=row, column=col)
                     cell.alignment = Alignment(horizontal='center', vertical='center')
                     cell.font = Font(bold=True)
 
-            # 示例数据
             data_row = 4
             ws.cell(row=data_row, column=1, value=sample_wh)
             ws.cell(row=data_row, column=2, value=sample_date)
