@@ -464,7 +464,9 @@ with tab_dict["📤 上传出勤数据"]:
                 original_dates = st.session_state["attendance_wide_selected"]["dates"]
                 combos = st.session_state["attendance_wide_selected"]["combos"]
 
+                # 获取数值列（跳过前两列）
                 numeric_cols = edited_df.columns[2:]
+
                 if edited_df[numeric_cols].eq(0).all().all():
                     st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
                 else:
@@ -473,8 +475,15 @@ with tab_dict["📤 上传出勤数据"]:
                     for wh in original_warehouses:
                         for d in original_dates:
                             row_data = edited_df.iloc[row_idx]
-                            for (supplier, shift, worker) in numeric_cols:
-                                val = row_data[(supplier, shift, worker)]
+                            # 遍历数值列，安全解包
+                            for col_tuple in numeric_cols:
+                                # 确保是三元组
+                                if len(col_tuple) == 3:
+                                    supplier, shift, worker = col_tuple
+                                else:
+                                    # 如果列结构异常，跳过
+                                    continue
+                                val = row_data[col_tuple]
                                 if val and val > 0:
                                     region = REGION_MAPPING.get(wh, "未知")
                                     records.append({
@@ -545,27 +554,18 @@ with tab_dict["📤 上传出勤数据"]:
             # 准备数据
             sample_wh = selected_warehouses[0]
             sample_date = datetime.now().strftime("%Y-%m-%d")
-            # 按供应商和班次分组，方便构建合并单元格
             from collections import defaultdict
             supplier_groups = defaultdict(lambda: defaultdict(list))
             for s, sh, w in combos_sample:
                 supplier_groups[s][sh].append(w)
 
-            # 构建列头顺序（保持供应商顺序，班次顺序）
-            suppliers = list(supplier_groups.keys())  # 已按排序
-            # 构建列宽信息
-            col_widths = [15, 12]  # 仓库、日期列宽
+            suppliers = list(supplier_groups.keys())
             total_data_cols = 0
             for s in suppliers:
                 shifts = supplier_groups[s]
-                # 按班次排序（保持原始顺序）
-                shift_list = list(shifts.keys())
-                # 计算该供应商总列数
-                supplier_col_count = sum(len(shifts[sh]) for sh in shift_list)
-                total_data_cols += supplier_col_count
+                total_data_cols += sum(len(shifts[sh]) for sh in list(shifts.keys()))
             total_cols = 2 + total_data_cols
 
-            # 使用 openpyxl 创建工作簿
             from openpyxl import Workbook
             from openpyxl.utils import get_column_letter
             from openpyxl.styles import Alignment, Font, Border, Side
@@ -574,70 +574,58 @@ with tab_dict["📤 上传出勤数据"]:
             ws = wb.active
             ws.title = "出勤数据"
 
-            # 设置列宽
+            # 列宽
             for i in range(1, total_cols+1):
                 if i <= 2:
-                    ws.column_dimensions[get_column_letter(i)].width = col_widths[i-1]
+                    ws.column_dimensions[get_column_letter(i)].width = 15
                 else:
                     ws.column_dimensions[get_column_letter(i)].width = 12
 
-            # 写入三层表头（第1-3行）
-            # 第1行：供应商（合并）和 仓库、日期（合并）
-            # 第2行：班次（合并）
-            # 第3行：人员类型
-
-            # 先写前两列（仓库、日期），跨三行合并
+            # 写入三层表头
             ws.merge_cells(start_row=1, start_column=1, end_row=3, end_column=1)
             ws.cell(row=1, column=1, value="仓库")
             ws.merge_cells(start_row=1, start_column=2, end_row=3, end_column=2)
             ws.cell(row=1, column=2, value="日期")
 
-            # 从第3列开始写数据列
             col_idx = 3
             for supplier in suppliers:
                 shifts = supplier_groups[supplier]
                 shift_list = list(shifts.keys())
                 supplier_col_count = sum(len(shifts[sh]) for sh in shift_list)
-                # 合并该供应商的列（第一行）
                 if supplier_col_count > 1:
                     ws.merge_cells(start_row=1, start_column=col_idx, end_row=1, end_column=col_idx+supplier_col_count-1)
                 ws.cell(row=1, column=col_idx, value=supplier)
 
-                # 第二行：班次，合并
                 for shift in shift_list:
                     worker_list = shifts[shift]
                     shift_col_count = len(worker_list)
                     if shift_col_count > 1:
                         ws.merge_cells(start_row=2, start_column=col_idx, end_row=2, end_column=col_idx+shift_col_count-1)
                     ws.cell(row=2, column=col_idx, value=shift)
-                    # 第三行：人员类型，每个单元格单独
                     for worker in worker_list:
                         ws.cell(row=3, column=col_idx, value=worker)
                         col_idx += 1
 
-            # 设置表头样式：居中、加粗
+            # 样式
             for row in range(1, 4):
                 for col in range(1, total_cols+1):
                     cell = ws.cell(row=row, column=col)
                     cell.alignment = Alignment(horizontal='center', vertical='center')
                     cell.font = Font(bold=True)
 
-            # 写入示例数据（第4行）
+            # 示例数据
             data_row = 4
             ws.cell(row=data_row, column=1, value=sample_wh)
             ws.cell(row=data_row, column=2, value=sample_date)
-            # 其余列全部写0
             for col in range(3, total_cols+1):
                 ws.cell(row=data_row, column=col, value=0)
 
-            # 设置边框（可选）
             thin_border = Border(left=Side(style='thin'), right=Side(style='thin'),
                                  top=Side(style='thin'), bottom=Side(style='thin'))
             for row in range(1, data_row+1):
                 for col in range(1, total_cols+1):
                     ws.cell(row=row, column=col).border = thin_border
 
-            # 保存到 BytesIO
             output = BytesIO()
             wb.save(output)
             template_bytes = output.getvalue()
