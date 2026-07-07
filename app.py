@@ -359,7 +359,7 @@ with tab_dict["📤 上传出勤数据"]:
     ### 操作说明
     1. 选择 **日期范围** 和 **一个或多个仓库**。
     2. 点击 **“生成表格”**，系统会生成与模板格式一致的表格：
-       - 前两列固定为 **仓库** 和 **日期**（不可编辑）。
+       - 前两列为 **仓库** 和 **日期**（可编辑，但建议不要修改）。
        - 其余列为 **供应商 → 班次 → 人员类型** 的三级表头。
     3. 在对应格子中填写出勤人数。
     4. 填写完毕后，点击 **“提交数据”**。
@@ -404,11 +404,8 @@ with tab_dict["📤 上传出勤数据"]:
         filtered = price_df[price_df["仓库名称"].isin(warehouses)]
         if filtered.empty:
             return []
-        # 提取三列并去重
         combos = filtered[["供应商", "班次", "长期工_日结工"]].drop_duplicates().values.tolist()
-        # 按供应商顺序排序（只保留存在的供应商）
         supplier_order_dict = {s: i for i, s in enumerate(SUPPLIER_ORDER)}
-        # 对组合排序：先按供应商顺序，再按班次，再按人员类型顺序
         worker_order_dict = {w: i for i, w in enumerate(WORKER_ORDER)}
         combos.sort(key=lambda x: (supplier_order_dict.get(x[0], 999), x[1], worker_order_dict.get(x[2], 999)))
         return combos
@@ -426,7 +423,7 @@ with tab_dict["📤 上传出勤数据"]:
                 if not combos:
                     st.warning("⚠️ 所选仓库在价卡表中无配置，请先上传价卡")
                 else:
-                    # 构建列 MultiIndex：前两列为 '仓库' 和 '日期'（单级），其余为 (供应商, 班次, 人员类型)
+                    # 构建列 MultiIndex：前两列为 '仓库' 和 '日期'，其余为 (供应商, 班次, 人员类型)
                     col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(supplier, shift, worker) for supplier, shift, worker in combos]
                     col_index = pd.MultiIndex.from_tuples(col_tuples)
 
@@ -434,7 +431,6 @@ with tab_dict["📤 上传出勤数据"]:
                     rows = []
                     for wh in selected_warehouses:
                         for d in dates:
-                            # 前两列填充仓库和日期，其余列默认为0
                             row_data = [wh, d] + [0] * len(combos)
                             rows.append(row_data)
 
@@ -454,25 +450,9 @@ with tab_dict["📤 上传出勤数据"]:
         df_wide = st.session_state["attendance_wide_df"]
         st.subheader(f"📋 出勤数据表格 ({len(df_wide)} 行 × {len(df_wide.columns)} 列)")
 
-        # 锁定前两列（仓库和日期）
-        column_config = {
-            ('仓库', '', ''): st.column_config.TextColumn("仓库", disabled=True),
-            ('日期', '', ''): st.column_config.TextColumn("日期", disabled=True),
-        }
-        # 其他列都是数值列，可编辑
-        for (supplier, shift, worker) in df_wide.columns[2:]:
-            # 使用元组作为列名
-            col_name = (supplier, shift, worker)
-            column_config[col_name] = st.column_config.NumberColumn(
-                f"{supplier}_{shift}_{worker}",
-                min_value=0,
-                step=1,
-                default=0
-            )
-
+        # 不使用 column_config，避免类型错误
         edited_df = st.data_editor(
             df_wide,
-            column_config=column_config,
             use_container_width=True,
             key="attendance_wide_editor",
             num_rows="fixed"  # 不可增删行
@@ -483,28 +463,39 @@ with tab_dict["📤 上传出勤数据"]:
         col_submit, col_clear = st.columns([2, 1])
         with col_submit:
             if st.button("📤 提交数据", type="primary", use_container_width=True):
-                # 检查是否有非零数据（忽略前两列）
+                # 获取原始仓库列表和日期列表（用于覆盖可能修改的前两列）
+                original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
+                original_dates = st.session_state["attendance_wide_selected"]["dates"]
+                combos = st.session_state["attendance_wide_selected"]["combos"]
+
+                # 检查数值列是否有非零
                 numeric_cols = edited_df.columns[2:]
                 if edited_df[numeric_cols].eq(0).all().all():
                     st.warning("⚠️ 所有数值均为0，没有需要提交的数据")
                 else:
                     records = []
-                    for idx in edited_df.index:
-                        wh = edited_df.loc[idx, ('仓库', '', '')]
-                        date_str = edited_df.loc[idx, ('日期', '', '')]
-                        for (supplier, shift, worker) in numeric_cols:
-                            val = edited_df.loc[idx, (supplier, shift, worker)]
-                            if val and val > 0:
-                                region = REGION_MAPPING.get(wh, "未知")
-                                records.append({
-                                    "区域": region,
-                                    "仓库名称": wh,
-                                    "日期": date_str,
-                                    "供应商": supplier,
-                                    "班次": shift,
-                                    "长期工_日结工": worker,
-                                    "人数": int(val)
-                                })
+                    # 遍历行索引，但使用原始仓库和日期重新构建，忽略前两列的值
+                    # 行数 = len(original_warehouses) * len(original_dates)
+                    row_idx = 0
+                    for wh in original_warehouses:
+                        for d in original_dates:
+                            # 从 edited_df 中提取该行的数值列
+                            row_data = edited_df.iloc[row_idx]
+                            for (supplier, shift, worker) in numeric_cols:
+                                val = row_data[(supplier, shift, worker)]
+                                if val and val > 0:
+                                    region = REGION_MAPPING.get(wh, "未知")
+                                    records.append({
+                                        "区域": region,
+                                        "仓库名称": wh,
+                                        "日期": d,
+                                        "供应商": supplier,
+                                        "班次": shift,
+                                        "长期工_日结工": worker,
+                                        "人数": int(val)
+                                    })
+                            row_idx += 1
+
                     if not records:
                         st.warning("⚠️ 没有找到有效数据（大于0）")
                     else:
@@ -523,9 +514,9 @@ with tab_dict["📤 上传出勤数据"]:
                                 st.balloons()
                                 # 重置表格为零（保留结构）
                                 zero_rows = []
-                                for wh in st.session_state["attendance_wide_selected"]["warehouses"]:
-                                    for d in st.session_state["attendance_wide_selected"]["dates"]:
-                                        zero_rows.append([wh, d] + [0] * len(st.session_state["attendance_wide_selected"]["combos"]))
+                                for wh in original_warehouses:
+                                    for d in original_dates:
+                                        zero_rows.append([wh, d] + [0] * len(combos))
                                 st.session_state["attendance_wide_df"] = pd.DataFrame(
                                     zero_rows,
                                     columns=edited_df.columns
@@ -538,11 +529,13 @@ with tab_dict["📤 上传出勤数据"]:
         with col_clear:
             if st.button("🗑️ 清空表格", use_container_width=True):
                 if "attendance_wide_df" in st.session_state:
-                    # 重置为零（保留结构和行数）
+                    original_warehouses = st.session_state["attendance_wide_selected"]["warehouses"]
+                    original_dates = st.session_state["attendance_wide_selected"]["dates"]
+                    combos = st.session_state["attendance_wide_selected"]["combos"]
                     zero_rows = []
-                    for wh in st.session_state["attendance_wide_selected"]["warehouses"]:
-                        for d in st.session_state["attendance_wide_selected"]["dates"]:
-                            zero_rows.append([wh, d] + [0] * len(st.session_state["attendance_wide_selected"]["combos"]))
+                    for wh in original_warehouses:
+                        for d in original_dates:
+                            zero_rows.append([wh, d] + [0] * len(combos))
                     st.session_state["attendance_wide_df"] = pd.DataFrame(
                         zero_rows,
                         columns=st.session_state["attendance_wide_df"].columns
@@ -559,10 +552,8 @@ with tab_dict["📤 上传出勤数据"]:
         if combos_sample:
             sample_wh = selected_warehouses[0]
             sample_dates = [datetime.now().strftime("%Y-%m-%d")]
-            # 构建列索引
             col_tuples = [('仓库', '', ''), ('日期', '', '')] + [(s, sh, w) for s, sh, w in combos_sample]
             col_index = pd.MultiIndex.from_tuples(col_tuples)
-            # 一行数据
             row_data = [sample_wh, sample_dates[0]] + [0] * len(combos_sample)
             sample_df = pd.DataFrame([row_data], columns=col_index)
             output = BytesIO()
@@ -576,7 +567,6 @@ with tab_dict["📤 上传出勤数据"]:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-
 
 
 # ===================== Tab 外劳人效分析看板 =====================
