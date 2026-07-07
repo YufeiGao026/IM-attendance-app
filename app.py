@@ -849,6 +849,8 @@ elif active_tab == 1:
             df_filtered = df_filtered[df_filtered["年月"] == selected_month]
         if selected_site != "全部":
             df_filtered = df_filtered[df_filtered["仓库名称"] == selected_site]
+
+        # ---------- 修复日期比较（使用 pd.to_datetime 而不是 strftime） ----------
         df_filtered = df_filtered[(df_filtered["日期"] >= pd.to_datetime(start_date)) & (df_filtered["日期"] <= pd.to_datetime(end_date))]
 
         if len(df_filtered) == 0:
@@ -952,7 +954,10 @@ elif active_tab == 2:
         filtered_df = filtered_df[filtered_df["区域"] == selected_region]
     if selected_warehouse != "全部":
         filtered_df = filtered_df[filtered_df["仓库名称"] == selected_warehouse]
-    filtered_df = filtered_df[(filtered_df["日期"] >= start_date.strftime("%Y-%m-%d")) & (filtered_df["日期"] <= end_date.strftime("%Y-%m-%d"))]
+
+    # ---------- 修复日期比较（使用 pd.to_datetime） ----------
+    filtered_df["日期"] = pd.to_datetime(filtered_df["日期"])
+    filtered_df = filtered_df[(filtered_df["日期"] >= pd.to_datetime(start_date)) & (filtered_df["日期"] <= pd.to_datetime(end_date))]
 
     if len(filtered_df) == 0:
         st.warning(_t("efficiency_filter_no_data"))
